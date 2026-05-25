@@ -3,7 +3,6 @@ from pydantic import BaseModel
 
 from atri.api.schemas import (
     AuditEventResponse,
-    AuditSummaryResponse,
     GraphSyncRequest,
     GraphSyncResponse,
     ReviewDecisionRequest,
