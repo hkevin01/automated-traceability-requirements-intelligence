@@ -78,6 +78,84 @@ sequenceDiagram
 
 The table summarizes what the dashboard should help reviewers see at a glance. The diagrams above show the data flow from suggestion to review, persistence, impact analysis, and reporting.
 
+## What Ships Today
+
+ATRI currently ships as a working scaffold with real API routes, persisted local stores, and a rendered dashboard page.
+
+### Live Behaviors
+
+- Suggest trace links from a requirement to candidate design, code, or test artifacts.
+- Record analyst accept or reject decisions for suggested links.
+- Persist trace graph snapshots for replayable impact analysis.
+- Record audit events for review decisions and graph sync actions.
+- Render a browser-friendly dashboard page from the same persisted stores used by the API.
+
+### Current Persistence Model
+
+| # | Store | Purpose | Format |
+| --- | --- | --- | --- |
+| <sub>1</sub> | <sub>Review store</sub> | <sub>Saves analyst accept/reject decisions.</sub> | <sub>JSON</sub> |
+| <sub>2</sub> | <sub>Graph store</sub> | <sub>Stores artifact nodes and trace links.</sub> | <sub>JSON</sub> |
+| <sub>3</sub> | <sub>Audit store</sub> | <sub>Records review and graph sync events.</sub> | <sub>JSON</sub> |
+
+The table above shows the live stores that power the current local workflow. The JSON format keeps the scaffold easy to inspect while the graph backend is still evolving.
+
+## End-to-End Workflow
+
+1. Ingest or sketch an artifact set.
+2. Suggest trace links with the API.
+3. Review and validate the suggested links.
+4. Sync accepted artifacts and links into the trace graph.
+5. Analyze impact from the stored graph.
+6. Review the dashboard for coverage, audit, and graph health.
+
+## Feature Matrix
+
+| # | Capability | API Surface | Notes |
+| --- | --- | --- | --- |
+| <sub>1</sub> | <sub>Link suggestion</sub> | <sub>/api/v1/traceability/link-suggest</sub> | <sub>Heuristic baseline with confidence and rationale.</sub> |
+| <sub>2</sub> | <sub>Analyst review</sub> | <sub>/api/v1/traceability/review</sub> | <sub>Accept or reject suggested trace links.</sub> |
+| <sub>3</sub> | <sub>Graph sync</sub> | <sub>/api/v1/traceability/graph</sub> | <sub>Persist artifacts and trace links for impact analysis.</sub> |
+| <sub>4</sub> | <sub>Audit trail</sub> | <sub>/api/v1/traceability/audit/*</sub> | <sub>Capture evidence for review actions and graph updates.</sub> |
+| <sub>5</sub> | <sub>Dashboard view</sub> | <sub>/api/v1/dashboard/view</sub> | <sub>Render a visual HTML summary with Mermaid-ready concepts.</sub> |
+
+## Roadmap View
+
+```mermaid
+gantt
+   title ATRI Delivery Path
+   dateFormat  YYYY-MM-DD
+   axisFormat  %b %d
+   section Core Platform
+   Ingestion adapters        :done,    ingest, 2026-05-01, 2026-05-12
+   Review workflow           :done,    review, 2026-05-12, 2026-05-18
+   Persisted trace graph     :done,    graph,  2026-05-18, 2026-05-23
+   Audit trail               :done,    audit,  2026-05-23, 2026-05-24
+   Visual dashboard          :active,  dashboard, 2026-05-24, 2026-05-26
+   section Next Steps
+   Graph database backend    :         neo4j,  2026-05-26, 2026-06-05
+   Ingestion connectors      :         connectors, 2026-06-05, 2026-06-20
+   Analyst drill-down UI     :         ui, 2026-06-20, 2026-07-01
+```
+
+## GitHub Notes
+
+- GitHub renders Mermaid diagrams directly in README markdown.
+- GitHub renders pipe tables, checklists, and blockquotes without extra tooling.
+- Local edits appear on GitHub only after the file is committed and pushed.
+
+### Release Checklist
+
+- [x] Core API routes are covered by tests.
+- [x] Review decisions persist locally.
+- [x] Trace graph snapshots persist locally.
+- [x] Audit events persist locally.
+- [x] Dashboard view renders in HTML.
+- [ ] Graph database backend is still pending.
+- [ ] Frontend drill-down UI is still pending.
+
+The checklist is intentionally mixed, so it doubles as a short status report and a GitHub-rendered visual cue for what is already in place versus what remains.
+
 ## Quick Start
 
 1. Create and activate a Python 3.11+ virtual environment.
