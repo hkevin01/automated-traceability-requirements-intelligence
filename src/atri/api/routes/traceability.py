@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from atri.api.schemas import (
+    GraphSyncRequest,
+    GraphSyncResponse,
     ReviewDecisionRequest,
     ReviewDecisionResponse,
     ReviewStatusResponse,
@@ -10,12 +12,14 @@ from atri.api.schemas import (
 )
 from atri.config import settings
 from atri.core.models.trace import Artifact
+from atri.core.services.graph_store import TraceGraphStore
 from atri.core.services.linking import LinkSuggestionService
 from atri.core.services.review import TraceReviewService
 
 router = APIRouter(prefix="/api/v1/traceability", tags=["traceability"])
 service = LinkSuggestionService()
 review_service = TraceReviewService(settings.review_store_path)
+graph_store = TraceGraphStore(settings.graph_store_path)
 
 
 class ArtifactIn(BaseModel):
@@ -87,3 +91,15 @@ def list_reviews() -> list[dict]:
 @router.get("/reviews/summary", response_model=ReviewSummaryResponse)
 def review_summary() -> dict:
     return review_service.summarize_reviews()
+
+
+@router.post("/graph", response_model=GraphSyncResponse)
+def sync_graph(payload: GraphSyncRequest) -> dict:
+    graph_store.replace_graph(
+        artifacts=[item.model_dump() for item in payload.artifacts],
+        links=[item.model_dump() for item in payload.links],
+    )
+    return {
+        "artifact_count": len(payload.artifacts),
+        "link_count": len(payload.links),
+    }

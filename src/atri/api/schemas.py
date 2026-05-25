@@ -54,6 +54,32 @@ class ReviewSummaryResponse(BaseModel):
     pending_reviews: int = Field(ge=0)
 
 
+class GraphArtifactRequest(BaseModel):
+    artifact_id: str
+    artifact_type: str
+    title: str
+    body: str
+    version: str
+
+
+class GraphLinkRequest(BaseModel):
+    source_id: str
+    target_id: str
+    link_type: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    rationale: str
+
+
+class GraphSyncRequest(BaseModel):
+    artifacts: list[GraphArtifactRequest]
+    links: list[GraphLinkRequest]
+
+
+class GraphSyncResponse(BaseModel):
+    artifact_count: int = Field(ge=0)
+    link_count: int = Field(ge=0)
+
+
 class ImpactFindingResponse(BaseModel):
     artifact_id: str
     score: float = Field(ge=0.0, le=1.0)

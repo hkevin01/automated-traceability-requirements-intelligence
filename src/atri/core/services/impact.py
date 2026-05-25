@@ -1,13 +1,21 @@
 from collections import deque
 
+from atri.core.services.graph_store import TraceGraphStore
+
 
 class ImpactAnalysisService:
+    def __init__(self, graph_store: TraceGraphStore | None = None) -> None:
+        self.graph_store = graph_store
+
     def analyze(
         self,
         changed_ids: list[str],
-        adjacency: dict[str, list[str]],
+        adjacency: dict[str, list[str]] | None = None,
         depth: int = 2,
     ) -> dict:
+        if adjacency is None:
+            adjacency = self.graph_store.adjacency_map() if self.graph_store else {}
+
         visited: set[str] = set(changed_ids)
         queue = deque([(cid, 0) for cid in changed_ids])
         impacted: list[dict] = []

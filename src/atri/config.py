@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     review_store_path: str = "data/processed/reviews.json"
+    graph_store_path: str = "data/processed/trace_graph.json"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="ATRI_")
 
