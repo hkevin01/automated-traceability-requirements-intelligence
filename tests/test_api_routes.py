@@ -2,7 +2,6 @@ from fastapi.testclient import TestClient
 
 from atri.main import app
 
-
 client = TestClient(app)
 
 
@@ -49,7 +48,7 @@ def test_traceability_suggestions_contract() -> None:
                 "source_id": "REQ-1",
                 "target_id": "DES-1",
                 "link_type": "related_to",
-                "confidence": 0.2,
+                "confidence": 0.3,
                 "rationale": "Token overlap heuristic baseline",
             }
         ]

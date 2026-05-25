@@ -10,14 +10,14 @@ from atri.api.routes.traceability import router as traceability_router
 from atri.config import settings
 
 try:
-	app_version = version("atri")
+    app_version = version("atri")
 except PackageNotFoundError:
-	app_version = "0.1.0"
+    app_version = "0.1.0"
 
 app = FastAPI(
-	title=settings.app_name,
-	version=app_version,
-	description="Automated traceability and requirements intelligence API.",
+    title=settings.app_name,
+    version=app_version,
+    description="Automated traceability and requirements intelligence API.",
 )
 
 app.include_router(health_router)
