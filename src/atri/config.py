@@ -7,9 +7,21 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    auth_enabled: bool = False
+    auth_default_user: str = "system"
+    auth_default_roles: str = "admin,reviewer,analyst"
+    auth_bearer_token: str = "change-me"
     review_store_path: str = "data/processed/reviews.json"
+    review_history_store_path: str = "data/processed/review_history.jsonl"
     graph_store_path: str = "data/processed/trace_graph.json"
+    graph_backend_uri: str = ""
+    graph_backend_user: str = ""
+    graph_backend_password: str = ""
+    graph_backend_name: str = "neo4j"
+    vector_index_path: str = "data/processed/vector_index.json"
     audit_store_path: str = "data/processed/audit_events.json"
+    frontend_api_base_url: str = "http://localhost:8000"
+    frontend_title: str = "ATRI Dashboard"
 
     model_config = SettingsConfigDict(env_file=".env", env_prefix="ATRI_")
 
