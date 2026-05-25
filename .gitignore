@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual env
+.venv/
+venv/
+env/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+
+# Local config
+.env
+*.local
+
+# Build/output
+build/
+dist/
+
+# Data artifacts
+*.parquet
+*.feather
+*.db
+*.sqlite3
+/tmp/
+
+# Node (if dashboard UI is added later)
+node_modules/
