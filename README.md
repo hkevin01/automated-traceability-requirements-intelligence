@@ -34,6 +34,50 @@ Traditional traceability work is labor-intensive. ATRI is designed to reduce ana
 
 See docs in `docs/` for detailed architecture and IV&V alignment.
 
+> Note: the current scaffold persists review decisions, trace graph snapshots, and audit events to JSON files under `data/processed/`. That keeps the flow reproducible for local development while the team iterates toward a graph database backend.
+
+## Visual Overview
+
+```mermaid
+flowchart LR
+   A[Requirement or Change] --> B[AI Link Suggestion]
+   B --> C[Analyst Review]
+   C -->|accept| D[Persisted Trace Graph]
+   C -->|reject| E[Audit Event]
+   D --> F[Impact Analysis]
+   D --> G[Dashboard View]
+   E --> G
+   F --> G
+```
+
+```mermaid
+sequenceDiagram
+   participant Analyst as Analyst
+   participant API as ATRI API
+   participant Reviews as Review Store
+   participant Graph as Graph Store
+   participant Audit as Audit Log
+
+   Analyst->>API: POST /api/v1/traceability/review
+   API->>Reviews: save decision
+   API->>Audit: record trace_review_decision
+   Analyst->>API: POST /api/v1/traceability/graph
+   API->>Graph: replace graph snapshot
+   API->>Audit: record graph_sync
+   API-->>Analyst: dashboard, summary, and audit views
+```
+
+## Operational Snapshot
+
+| # | View | GitHub Feature | Why it matters |
+| --- | --- | --- | --- |
+| <sub>1</sub> | <sub>Trace coverage</sub> | <sub>Badge-style metric</sub> | <sub>Shows how much of the lifecycle is connected.</sub> |
+| <sub>2</sub> | <sub>Review decisions</sub> | <sub>Mermaid sequence</sub> | <sub>Shows the analyst validation loop.</sub> |
+| <sub>3</sub> | <sub>Graph health</sub> | <sub>Mermaid flowchart</sub> | <sub>Explains how stored links feed impact analysis.</sub> |
+| <sub>4</sub> | <sub>Audit trail</sub> | <sub>Note blockquote</sub> | <sub>Documents evidence retention for IV&V reviews.</sub> |
+
+The table summarizes what the dashboard should help reviewers see at a glance. The diagrams above show the data flow from suggestion to review, persistence, impact analysis, and reporting.
+
 ## Quick Start
 
 1. Create and activate a Python 3.11+ virtual environment.
