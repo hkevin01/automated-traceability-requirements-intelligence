@@ -16,6 +16,7 @@ Verification: Integration tests require a running Neo4j instance (skipped in CI 
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -37,13 +38,6 @@ class Neo4jGraphStore:
         password: str,
         database: str = "neo4j",
     ) -> None:
-        """
-        Inputs:
-          uri      - Bolt URI, e.g. "bolt://localhost:7687"
-          user     - Neo4j username
-          password - Neo4j password
-          database - target database name (default "neo4j")
-        """
         self._uri = uri
         self._user = user
         self._password = password
@@ -60,8 +54,7 @@ class Neo4jGraphStore:
         """
         ID: ATRI-NEO4J-003
         Purpose: Establish driver connection; set _available flag.
-        Failure modes: ImportError (driver not installed) or ServiceUnavailable
-                       both set _available=False and log a warning.
+        Failure modes: ImportError or ServiceUnavailable both set _available=False.
         """
         try:
             from neo4j import GraphDatabase  # noqa: PLC0415
@@ -69,7 +62,6 @@ class Neo4jGraphStore:
                 self._uri,
                 auth=(self._user, self._password),
             )
-            # Verify connectivity
             self._driver.verify_connectivity()
             self._available = True
             logger.info("Neo4j connection established: %s", self._uri)
@@ -88,6 +80,7 @@ class Neo4jGraphStore:
 
     @property
     def available(self) -> bool:
+        """Return True if the Neo4j connection is healthy."""
         return self._available
 
     # ------------------------------------------------------------------
@@ -97,8 +90,8 @@ class Neo4jGraphStore:
     def ensure_schema(self) -> None:
         """
         ID: ATRI-NEO4J-004
-        Purpose: Create uniqueness constraint and index for artifact_id.
-        Side Effects: Runs CREATE CONSTRAINT IF NOT EXISTS in Neo4j.
+        Purpose: Create uniqueness constraint on artifact_id.
+        Side Effects: Runs CREATE CONSTRAINT in Neo4j.
         """
         if not self._available:
             return
@@ -115,9 +108,9 @@ class Neo4jGraphStore:
     def replace_graph(self, artifacts: list[dict], links: list[dict]) -> None:
         """
         ID: ATRI-NEO4J-005
-        Purpose: Replace the entire trace graph in Neo4j with a new set of artifacts and links.
+        Purpose: Replace the entire trace graph with a new set of artifacts and links.
         Inputs:
-          artifacts - list of dicts with at least 'artifact_id', 'artifact_type', 'title', 'body'.
+          artifacts - list of dicts with 'artifact_id', 'artifact_type', 'title', 'body'.
           links     - list of dicts with 'source_id', 'target_id', 'link_type', 'confidence'.
         Side Effects: Deletes all :Artifact nodes and relationships; recreates from inputs.
         Failure modes: Logs and returns if not available.
@@ -125,58 +118,46 @@ class Neo4jGraphStore:
         if not self._available:
             return
         with self._driver.session(database=self._database) as session:
-            # Clear existing graph
             session.run("MATCH (n:Artifact) DETACH DELETE n")
-
-            # Create nodes
             for artifact in artifacts:
                 session.run(
-                    "MERGE (a:Artifact {artifact_id: $artifact_id}) "
-                    "SET a += $props",
+                    "MERGE (a:Artifact {artifact_id: $artifact_id}) SET a += $props",
                     artifact_id=artifact["artifact_id"],
-                    props={k: v for k, v in artifact.items()},
+                    props={k: str(v) for k, v in artifact.items()},
                 )
-
-            # Create relationships
             for link in links:
-                import re as _re  # noqa: PLC0415
-                link_type = _re.sub(r"\W", "_", link.get("link_type", "RELATED_TO")).upper()
+                link_type = re.sub(r"\W", "_", link.get("link_type", "RELATED_TO")).upper()
                 session.run(
                     f"MATCH (src:Artifact {{artifact_id: $src_id}}) "
                     f"MATCH (tgt:Artifact {{artifact_id: $tgt_id}}) "
-                    f"MERGE (src)-[r:{link_type}]->(tgt) "
-                    f"SET r += $props",
+                    f"MERGE (src)-[r:{link_type}]->(tgt) SET r += $props",
                     src_id=link["source_id"],
                     tgt_id=link["target_id"],
-                    props={k: v for k, v in link.items()},
+                    props={k: str(v) for k, v in link.items()},
                 )
 
     def adjacency_map(self) -> dict[str, list[str]]:
         """
         ID: ATRI-NEO4J-006
         Purpose: Return outgoing adjacency map {artifact_id: [neighbour_id, ...]}.
-        Outputs: dict mapping each node to its direct downstream neighbours.
         Failure modes: Returns empty dict if not available.
         """
         if not self._available:
             return {}
+        adj: dict[str, list[str]] = {}
         with self._driver.session(database=self._database) as session:
             result = session.run(
                 "MATCH (a:Artifact)-[r]->(b:Artifact) "
                 "RETURN a.artifact_id AS src, b.artifact_id AS tgt"
             )
-            adj: dict[str, list[str]] = {}
             for record in result:
-                src = record["src"]
-                tgt = record["tgt"]
-                adj.setdefault(src, []).append(tgt)
+                adj.setdefault(record["src"], []).append(record["tgt"])
         return adj
 
     def stats(self) -> dict[str, int | float]:
         """
         ID: ATRI-NEO4J-007
         Purpose: Return graph statistics from Neo4j.
-        Outputs: dict with artifact_count, link_count, etc.
         Failure modes: Returns zeros if not available.
         """
         if not self._available:
@@ -186,27 +167,21 @@ class Neo4jGraphStore:
                 "leaf_artifacts": 0, "average_degree": 0.0,
             }
         with self._driver.session(database=self._database) as session:
-            r_artifacts = session.run("MATCH (a:Artifact) RETURN count(a) AS cnt")
-            artifact_count = r_artifacts.single()["cnt"]
-
-            r_links = session.run("MATCH ()-[r]->() RETURN count(r) AS cnt")
-            link_count = r_links.single()["cnt"]
-
-            r_isolated = session.run(
+            artifact_count = session.run(
+                "MATCH (a:Artifact) RETURN count(a) AS cnt"
+            ).single()["cnt"]
+            link_count = session.run(
+                "MATCH ()-[r]->() RETURN count(r) AS cnt"
+            ).single()["cnt"]
+            isolated = session.run(
                 "MATCH (a:Artifact) WHERE NOT (a)--() RETURN count(a) AS cnt"
-            )
-            isolated = r_isolated.single()["cnt"]
-
-            r_roots = session.run(
+            ).single()["cnt"]
+            roots = session.run(
                 "MATCH (a:Artifact) WHERE NOT ()-[]->(a) AND (a)-[]->() RETURN count(a) AS cnt"
-            )
-            roots = r_roots.single()["cnt"]
-
-            r_leaves = session.run(
+            ).single()["cnt"]
+            leaves = session.run(
                 "MATCH (a:Artifact) WHERE NOT (a)-[]->() AND ()-[]->(a) RETURN count(a) AS cnt"
-            )
-            leaves = r_leaves.single()["cnt"]
-
+            ).single()["cnt"]
         return {
             "artifact_count": artifact_count,
             "link_count": link_count,
@@ -217,7 +192,7 @@ class Neo4jGraphStore:
         }
 
     def get_artifact(self, artifact_id: str) -> dict | None:
-        """Fetch a single artifact by ID."""
+        """Fetch a single artifact node by ID."""
         if not self._available:
             return None
         with self._driver.session(database=self._database) as session:
@@ -227,6 +202,8 @@ class Neo4jGraphStore:
             )
             record = result.single()
             return dict(record["props"]) if record else None
+
+    def get_downstream(self, artifact_id: str, depth: int = 3) -> list[dict]:
         """
         ID: ATRI-NEO4J-008
         Purpose: Return all downstream artifacts within `depth` hops using Cypher.
@@ -252,7 +229,3 @@ class Neo4jGraphStore:
                 }
                 for r in result
             ]
-
-
-# Lazy import guard - import re only if needed
-import re  # noqa: E402
