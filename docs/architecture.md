@@ -7,13 +7,16 @@ ATRI supports continuous traceability intelligence across requirements, design, 
 ## 2. Logical Components
 
 - Ingestion Pipeline
-  - Parses requirement specs, design docs, code metadata, and test metadata.
+  - Parses requirement specs, design docs, code metadata, test metadata, and model exports from DOORS, Jama, Visure, Word/PDF, and SysML.
 - Normalization Layer
   - Converts artifacts into canonical forms and stable IDs.
 - Traceability Intelligence Engine
   - Link suggestion service (NLP/LLM + rules)
   - Impact analysis service (graph expansion + risk scoring)
   - Gap detection service (coverage, orphan, and stale-link checks)
+  - Capability catalog for surfacing the active traceability scope
+- Analyst Review Workflow
+  - Accept/reject control for suggested links with reviewer comments and status tracking.
 - Evidence Store
   - Stores links, confidence, rationale, provenance, and review outcomes.
 - API + Dashboard Feed
@@ -38,14 +41,24 @@ ATRI supports continuous traceability intelligence across requirements, design, 
 4. Dashboard Refresh
    - KPI computation -> endpoint payload for near-real-time visualizations.
 
-## 5. Safety-Critical Guardrails
+5. Analyst Review
+  - Suggested link -> analyst decision -> accepted/rejected state -> audit trail.
+
+## 5. Expanded Domain Coverage
+
+- Requirements to design, code, and test traceability.
+- Hazards to mitigations traceability.
+- Interfaces to implementations traceability.
+- Verification artifacts tied to each control surface.
+
+## 6. Safety-Critical Guardrails
 
 - Human-in-the-loop acceptance before link finalization.
 - Full audit trail for model outputs and reviewer decisions.
 - Deterministic fallback rules when model confidence is below threshold.
 - Baseline snapshots and diff history for every artifact version.
 
-## 6. Deployment Modes
+## 7. Deployment Modes
 
 - Local Dev: FastAPI + in-memory graph abstraction.
 - Team Mode: FastAPI + Postgres + Neo4j + Redis cache.

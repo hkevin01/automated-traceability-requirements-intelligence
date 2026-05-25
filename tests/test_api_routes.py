@@ -18,6 +18,44 @@ def test_dashboard_summary_contract() -> None:
     }
 
 
+def test_capability_catalog_contract() -> None:
+    response = client.get("/api/v1/capabilities/catalog")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "capabilities": [
+            {
+                "name": "AI-assisted requirement linking",
+                "description": (
+                    "Propose trace links between requirements, design, code, tests, "
+                    "hazards, and interfaces."
+                ),
+            },
+            {
+                "name": "Automated change-impact analysis",
+                "description": (
+                    "Identify impacted artifacts when a requirement, design element, "
+                    "or code module changes."
+                ),
+            },
+            {
+                "name": "Intelligent gap detection",
+                "description": (
+                    "Detect orphan requirements, missing tests, incomplete mitigations, "
+                    "and weak verification coverage."
+                ),
+            },
+            {
+                "name": "Real-time traceability dashboards",
+                "description": (
+                    "Summarize coverage, orphan artifacts, high-risk modules, and "
+                    "verification progress."
+                ),
+            },
+        ]
+    }
+
+
 def test_traceability_suggestions_contract() -> None:
     response = client.post(
         "/api/v1/traceability/link-suggest",
@@ -53,6 +91,82 @@ def test_traceability_suggestions_contract() -> None:
             }
         ]
     }
+
+
+def test_traceability_review_workflow_contract() -> None:
+    accepted_response = client.post(
+        "/api/v1/traceability/review",
+        json={
+            "source_id": "REQ-1",
+            "target_id": "DES-1",
+            "decision": "accepted",
+            "reviewer": "analyst-a",
+            "comments": "Confirmed by design review evidence.",
+        },
+    )
+
+    assert accepted_response.status_code == 200
+    assert accepted_response.json() == {
+        "review": {
+            "source_id": "REQ-1",
+            "target_id": "DES-1",
+            "decision": "accepted",
+            "reviewer": "analyst-a",
+            "comments": "Confirmed by design review evidence.",
+        }
+    }
+
+    rejected_response = client.post(
+        "/api/v1/traceability/review",
+        json={
+            "source_id": "REQ-2",
+            "target_id": "CODE-2",
+            "decision": "rejected",
+            "reviewer": "analyst-b",
+            "comments": "No direct implementation evidence.",
+        },
+    )
+
+    assert rejected_response.status_code == 200
+    assert rejected_response.json() == {
+        "review": {
+            "source_id": "REQ-2",
+            "target_id": "CODE-2",
+            "decision": "rejected",
+            "reviewer": "analyst-b",
+            "comments": "No direct implementation evidence.",
+        }
+    }
+
+    summary_response = client.get("/api/v1/traceability/reviews/summary")
+
+    assert summary_response.status_code == 200
+    assert summary_response.json() == {
+        "total_reviews": 2,
+        "accepted_reviews": 1,
+        "rejected_reviews": 1,
+        "pending_reviews": 0,
+    }
+
+    list_response = client.get("/api/v1/traceability/reviews")
+
+    assert list_response.status_code == 200
+    assert list_response.json() == [
+        {
+            "source_id": "REQ-1",
+            "target_id": "DES-1",
+            "decision": "accepted",
+            "reviewer": "analyst-a",
+            "comments": "Confirmed by design review evidence.",
+        },
+        {
+            "source_id": "REQ-2",
+            "target_id": "CODE-2",
+            "decision": "rejected",
+            "reviewer": "analyst-b",
+            "comments": "No direct implementation evidence.",
+        },
+    ]
 
 
 def test_impact_analysis_contract() -> None:

@@ -27,6 +27,33 @@ class TraceabilitySuggestionsResponse(BaseModel):
     suggestions: list[TraceabilitySuggestionResponse]
 
 
+class ReviewStatusResponse(BaseModel):
+    source_id: str
+    target_id: str
+    decision: str
+    reviewer: str
+    comments: str = ""
+
+
+class ReviewDecisionRequest(BaseModel):
+    source_id: str
+    target_id: str
+    decision: str
+    reviewer: str
+    comments: str = ""
+
+
+class ReviewDecisionResponse(BaseModel):
+    review: ReviewStatusResponse
+
+
+class ReviewSummaryResponse(BaseModel):
+    total_reviews: int = Field(ge=0)
+    accepted_reviews: int = Field(ge=0)
+    rejected_reviews: int = Field(ge=0)
+    pending_reviews: int = Field(ge=0)
+
+
 class ImpactFindingResponse(BaseModel):
     artifact_id: str
     score: float = Field(ge=0.0, le=1.0)
@@ -47,3 +74,12 @@ class GapFindingResponse(BaseModel):
 
 class GapDetectionResponse(BaseModel):
     findings: list[GapFindingResponse]
+
+
+class CapabilityResponse(BaseModel):
+    name: str
+    description: str
+
+
+class CapabilityCatalogResponse(BaseModel):
+    capabilities: list[CapabilityResponse]

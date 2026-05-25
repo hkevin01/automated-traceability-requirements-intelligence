@@ -2,6 +2,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from fastapi import FastAPI
 
+from atri.api.routes.capabilities import router as capabilities_router
 from atri.api.routes.dashboard import router as dashboard_router
 from atri.api.routes.gaps import router as gaps_router
 from atri.api.routes.health import router as health_router
@@ -21,6 +22,7 @@ app = FastAPI(
 )
 
 app.include_router(health_router)
+app.include_router(capabilities_router)
 app.include_router(dashboard_router)
 app.include_router(traceability_router)
 app.include_router(impact_router)

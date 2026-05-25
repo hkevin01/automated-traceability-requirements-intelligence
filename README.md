@@ -13,6 +13,14 @@ Traditional traceability work is labor-intensive. ATRI is designed to reduce ana
 - Gap detection across lifecycle artifacts
 - Real-time dashboard APIs for coverage and risk posture
 
+## Expanded Capability Map
+
+- AI-assisted requirement linking across requirements, design, code, tests, hazards, and interfaces
+- Automated change-impact analysis for affected design, code, test, hazard, and verification artifacts
+- Intelligent gap detection for orphan requirements, missing tests, weak mitigations, and incomplete verification
+- Analyst review workflow for accepting and rejecting suggested trace links
+- Real-time traceability dashboards for coverage, volatility, change activity, and risk posture
+
 ## Initial Architecture
 
 - API Layer (FastAPI): endpoints for requirements, links, impact, and gap analysis
@@ -39,6 +47,9 @@ See docs in `docs/` for detailed architecture and IV&V alignment.
 - `GET /health` - service health
 - `GET /api/v1/dashboard/summary` - high-level traceability KPIs
 - `POST /api/v1/traceability/link-suggest` - suggest links for a requirement
+- `POST /api/v1/traceability/review` - accept or reject a suggested trace link
+- `GET /api/v1/traceability/reviews` - list review decisions
+- `GET /api/v1/traceability/reviews/summary` - review counts by status
 - `POST /api/v1/impact/analyze` - impact analysis from changed artifacts
 - `POST /api/v1/gaps/detect` - detect missing or weak trace links
 
@@ -52,7 +63,9 @@ See docs in `docs/` for detailed architecture and IV&V alignment.
 
 ## Near-Term Roadmap
 
+- Build ingestion adapters for DOORS, Jama, Visure, Word/PDF, and SysML sources
 - Integrate vector retrieval for semantic linking
 - Add graph database adapter (Neo4j)
-- Add authn/authz and audit events
-- Ship frontend dashboard (React) connected to summary + drill-down APIs
+- Add authn/authz, review state, and audit events
+- Expand the review workflow with persistence and reviewer assignment
+- Ship frontend dashboard (React) connected to summary, capability, and drill-down APIs
