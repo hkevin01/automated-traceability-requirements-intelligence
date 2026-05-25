@@ -1,9 +1,11 @@
 from fastapi import APIRouter
 
+from atri.api.schemas import DashboardSummaryResponse
+
 router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])
 
 
-@router.get("/summary")
+@router.get("/summary", response_model=DashboardSummaryResponse)
 def summary() -> dict:
     return {
         "trace_coverage": 0.78,

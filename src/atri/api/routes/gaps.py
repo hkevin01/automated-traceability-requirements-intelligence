@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from atri.api.schemas import GapDetectionResponse
 from atri.core.services.gaps import GapDetectionService
 
 router = APIRouter(prefix="/api/v1/gaps", tags=["gaps"])
@@ -22,7 +23,7 @@ class GapRequest(BaseModel):
     links: list[LinkEntry]
 
 
-@router.post("/detect")
+@router.post("/detect", response_model=GapDetectionResponse)
 def detect_gaps(payload: GapRequest) -> dict:
     return {
         "findings": service.detect(

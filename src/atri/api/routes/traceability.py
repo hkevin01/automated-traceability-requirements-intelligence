@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+from atri.api.schemas import TraceabilitySuggestionsResponse
 from atri.core.models.trace import Artifact
 from atri.core.services.linking import LinkSuggestionService
 
@@ -21,7 +22,7 @@ class SuggestRequest(BaseModel):
     candidates: list[ArtifactIn]
 
 
-@router.post("/link-suggest")
+@router.post("/link-suggest", response_model=TraceabilitySuggestionsResponse)
 def suggest_links(payload: SuggestRequest) -> dict:
     source = Artifact(**payload.source.model_dump())
     candidates = [Artifact(**candidate.model_dump()) for candidate in payload.candidates]
