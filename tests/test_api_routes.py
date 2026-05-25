@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from atri.api.routes import dashboard as dashboard_route
 from atri.api.routes import impact as impact_route
 from atri.api.routes import traceability as traceability_route
 from atri.core.services.audit import TraceAuditService
@@ -21,6 +22,98 @@ def test_dashboard_summary_contract() -> None:
         "orphan_tests": 5,
         "high_risk_changes_7d": 3,
     }
+
+
+def test_dashboard_view_renders_visual_summary(tmp_path, monkeypatch) -> None:
+    review_store = tmp_path / "reviews.json"
+    audit_store = tmp_path / "audit_events.json"
+    graph_store = tmp_path / "trace_graph.json"
+
+    review_service = TraceReviewService(review_store)
+    review_service.record_review(
+        source_id="REQ-70",
+        target_id="DES-70",
+        decision="accepted",
+        reviewer="analyst-g",
+        comments="Visual dashboard seed.",
+    )
+    review_service.record_review(
+        source_id="REQ-71",
+        target_id="CODE-71",
+        decision="rejected",
+        reviewer="analyst-h",
+        comments="Visual dashboard seed.",
+    )
+
+    audit_service = TraceAuditService(audit_store)
+    audit_service.record_event(
+        event_type="trace_review_decision",
+        subject_id="REQ-70->DES-70",
+        actor="analyst-g",
+        details={"decision": "accepted"},
+    )
+    audit_service.record_event(
+        event_type="graph_sync",
+        subject_id="trace_graph",
+        actor="system",
+        details={"artifact_count": "3", "link_count": "2"},
+    )
+
+    graph = TraceGraphStore(graph_store)
+    graph.replace_graph(
+        artifacts=[
+            {
+                "artifact_id": "REQ-70",
+                "artifact_type": "requirement",
+                "title": "Visual requirement",
+                "body": "Need a dashboard view.",
+                "version": "v1",
+            },
+            {
+                "artifact_id": "DES-70",
+                "artifact_type": "design",
+                "title": "Visual design",
+                "body": "Render the dashboard.",
+                "version": "v1",
+            },
+            {
+                "artifact_id": "CODE-70",
+                "artifact_type": "code",
+                "title": "Visual code",
+                "body": "Render charts.",
+                "version": "v1",
+            },
+        ],
+        links=[
+            {
+                "source_id": "REQ-70",
+                "target_id": "DES-70",
+                "link_type": "refines",
+                "confidence": 0.91,
+                "rationale": "Dashboard requirement maps to design.",
+            },
+            {
+                "source_id": "DES-70",
+                "target_id": "CODE-70",
+                "link_type": "implements",
+                "confidence": 0.9,
+                "rationale": "Dashboard design maps to implementation.",
+            },
+        ],
+    )
+
+    monkeypatch.setattr(dashboard_route, "review_service", review_service)
+    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
+    monkeypatch.setattr(dashboard_route, "graph_store", graph)
+
+    response = client.get("/api/v1/dashboard/view")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Traceability Dashboard" in response.text
+    assert "Accepted reviews: 1" in response.text
+    assert "Audit events: 2" in response.text
+    assert "Isolated artifacts: 0" in response.text
 
 
 def test_capability_catalog_contract() -> None:

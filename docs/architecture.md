@@ -24,7 +24,7 @@ ATRI supports continuous traceability intelligence across requirements, design, 
 - Evidence Store
   - Stores links, confidence, rationale, provenance, and review outcomes.
 - API + Dashboard Feed
-  - Serves operational views and analyst workflows.
+  - Serves operational JSON views and a rendered HTML dashboard with SVG panels.
 
 ## 3. Data Model (Core)
 
@@ -53,6 +53,9 @@ ATRI supports continuous traceability intelligence across requirements, design, 
 
 7. Audit Capture
   - Review decision or graph sync -> audit event persisted -> evidence available for review.
+
+8. Visual Reporting
+  - Summary and persisted stores -> HTML dashboard -> cards, bars, and graph health indicators.
 
 ## 5. Expanded Domain Coverage
 

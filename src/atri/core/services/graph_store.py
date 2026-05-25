@@ -24,6 +24,34 @@ class TraceGraphStore:
             for node in self._graph.nodes
         }
 
+    def stats(self) -> dict[str, int | float]:
+        artifact_count = self._graph.number_of_nodes()
+        link_count = self._graph.number_of_edges()
+        isolated_artifacts = sum(
+            1
+            for node in self._graph.nodes
+            if self._graph.in_degree(node) == 0 and self._graph.out_degree(node) == 0
+        )
+        root_artifacts = sum(
+            1
+            for node in self._graph.nodes
+            if self._graph.in_degree(node) == 0 and self._graph.out_degree(node) > 0
+        )
+        leaf_artifacts = sum(
+            1
+            for node in self._graph.nodes
+            if self._graph.in_degree(node) > 0 and self._graph.out_degree(node) == 0
+        )
+        average_degree = round(link_count / artifact_count, 2) if artifact_count else 0.0
+        return {
+            "artifact_count": artifact_count,
+            "link_count": link_count,
+            "isolated_artifacts": isolated_artifacts,
+            "root_artifacts": root_artifacts,
+            "leaf_artifacts": leaf_artifacts,
+            "average_degree": average_degree,
+        }
+
     def _load(self) -> None:
         if not self._storage_path.exists():
             return

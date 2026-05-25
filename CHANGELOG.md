@@ -4,6 +4,7 @@
 
 ### Added
 
+- Visual HTML dashboard page with coverage cards and SVG panels for graph, audit, and review status.
 - Persisted audit trail for traceability actions with review and graph sync history endpoints.
 - Persisted trace graph adapter with graph sync support and impact analysis fallback to stored links.
 - File-backed persistence for analyst review decisions under the processed data directory.
