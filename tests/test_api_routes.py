@@ -1,5 +1,8 @@
 from fastapi.testclient import TestClient
 
+from atri.api.routes import impact as impact_route
+from atri.api.routes import traceability as traceability_route
+from atri.core.services.graph_store import TraceGraphStore
 from atri.core.services.review import TraceReviewService
 from atri.main import app
 
@@ -191,6 +194,105 @@ def test_trace_review_service_persists_reviews(tmp_path) -> None:
     assert reviews[0].decision == "accepted"
     assert reviews[0].reviewer == "analyst-c"
     assert reviews[0].comments == "Persist this decision."
+
+
+def test_trace_graph_store_persists_and_drives_impact(tmp_path, monkeypatch) -> None:
+    store_path = tmp_path / "trace_graph.json"
+    graph_store = TraceGraphStore(store_path)
+    monkeypatch.setattr(traceability_route, "graph_store", graph_store)
+    monkeypatch.setattr(impact_route.service, "graph_store", graph_store)
+
+    sync_response = client.post(
+        "/api/v1/traceability/graph",
+        json={
+            "artifacts": [
+                {
+                    "artifact_id": "REQ-10",
+                    "artifact_type": "requirement",
+                    "title": "Access requirement",
+                    "body": "The system shall restrict access.",
+                    "version": "v1",
+                },
+                {
+                    "artifact_id": "DES-10",
+                    "artifact_type": "design",
+                    "title": "Access control design",
+                    "body": "Access is controlled by a validation service.",
+                    "version": "v1",
+                },
+                {
+                    "artifact_id": "CODE-10",
+                    "artifact_type": "code",
+                    "title": "Access control module",
+                    "body": "Implements the validation service.",
+                    "version": "v1",
+                },
+            ],
+            "links": [
+                {
+                    "source_id": "REQ-10",
+                    "target_id": "DES-10",
+                    "link_type": "refines",
+                    "confidence": 0.95,
+                    "rationale": "Requirement maps to design intent.",
+                },
+                {
+                    "source_id": "DES-10",
+                    "target_id": "CODE-10",
+                    "link_type": "implements",
+                    "confidence": 0.94,
+                    "rationale": "Design maps to implementation.",
+                },
+            ],
+        },
+    )
+
+    assert sync_response.status_code == 200
+    assert sync_response.json() == {"artifact_count": 3, "link_count": 2}
+
+    impact_response = client.post(
+        "/api/v1/impact/analyze",
+        json={"changed_ids": ["REQ-10"], "depth": 2},
+    )
+
+    assert impact_response.status_code == 200
+    assert impact_response.json() == {
+        "changed": ["REQ-10"],
+        "impacted": [
+            {"artifact_id": "DES-10", "score": 0.75, "distance": 1},
+            {"artifact_id": "CODE-10", "score": 0.5, "distance": 2},
+        ],
+    }
+
+
+def test_trace_graph_store_reload(tmp_path) -> None:
+    store_path = tmp_path / "trace_graph.json"
+    graph_store = TraceGraphStore(store_path)
+
+    graph_store.replace_graph(
+        artifacts=[
+            {
+                "artifact_id": "REQ-20",
+                "artifact_type": "requirement",
+                "title": "Telemetry requirement",
+                "body": "The system shall capture telemetry.",
+                "version": "v1",
+            }
+        ],
+        links=[
+            {
+                "source_id": "REQ-20",
+                "target_id": "DES-20",
+                "link_type": "refines",
+                "confidence": 0.9,
+                "rationale": "Direct trace to design.",
+            }
+        ],
+    )
+
+    reloaded_store = TraceGraphStore(store_path)
+
+    assert reloaded_store.adjacency_map() == {"REQ-20": ["DES-20"], "DES-20": []}
 
 
 def test_impact_analysis_contract() -> None:

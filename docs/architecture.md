@@ -15,6 +15,8 @@ ATRI supports continuous traceability intelligence across requirements, design, 
   - Impact analysis service (graph expansion + risk scoring)
   - Gap detection service (coverage, orphan, and stale-link checks)
   - Capability catalog for surfacing the active traceability scope
+- Trace Graph Store
+  - Persisted node and edge store for replayable impact analysis and graph sync.
 - Analyst Review Workflow
   - Accept/reject control for suggested links with reviewer comments and status tracking.
 - Evidence Store
@@ -43,6 +45,9 @@ ATRI supports continuous traceability intelligence across requirements, design, 
 
 5. Analyst Review
   - Suggested link -> analyst decision -> accepted/rejected state -> audit trail.
+
+6. Graph Sync and Impact
+  - Artifact and link sync -> persisted graph update -> impact traversal from stored edges.
 
 ## 5. Expanded Domain Coverage
 

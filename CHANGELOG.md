@@ -4,6 +4,7 @@
 
 ### Added
 
+- Persisted trace graph adapter with graph sync support and impact analysis fallback to stored links.
 - File-backed persistence for analyst review decisions under the processed data directory.
 - Analyst review workflow endpoints for accepting and rejecting suggested trace links.
 - Capability catalog endpoint that advertises the expanded ATRI scope.
