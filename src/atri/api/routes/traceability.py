@@ -8,13 +8,14 @@ from atri.api.schemas import (
     ReviewSummaryResponse,
     TraceabilitySuggestionsResponse,
 )
+from atri.config import settings
 from atri.core.models.trace import Artifact
 from atri.core.services.linking import LinkSuggestionService
 from atri.core.services.review import TraceReviewService
 
 router = APIRouter(prefix="/api/v1/traceability", tags=["traceability"])
 service = LinkSuggestionService()
-review_service = TraceReviewService()
+review_service = TraceReviewService(settings.review_store_path)
 
 
 class ArtifactIn(BaseModel):

@@ -1,0 +1,16 @@
+[
+  {
+    "comments": "Confirmed by design review evidence.",
+    "decision": "accepted",
+    "reviewer": "analyst-a",
+    "source_id": "REQ-1",
+    "target_id": "DES-1"
+  },
+  {
+    "comments": "No direct implementation evidence.",
+    "decision": "rejected",
+    "reviewer": "analyst-b",
+    "source_id": "REQ-2",
+    "target_id": "CODE-2"
+  }
+]

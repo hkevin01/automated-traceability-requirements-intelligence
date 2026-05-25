@@ -4,6 +4,7 @@
 
 ### Added
 
+- File-backed persistence for analyst review decisions under the processed data directory.
 - Analyst review workflow endpoints for accepting and rejecting suggested trace links.
 - Capability catalog endpoint that advertises the expanded ATRI scope.
 - Roadmap documentation for ingestion, semantic analysis, graph storage, analyst review, and dashboards.

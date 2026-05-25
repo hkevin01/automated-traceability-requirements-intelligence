@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from atri.core.services.review import TraceReviewService
 from atri.main import app
 
 client = TestClient(app)
@@ -167,6 +168,29 @@ def test_traceability_review_workflow_contract() -> None:
             "comments": "No direct implementation evidence.",
         },
     ]
+
+
+def test_trace_review_service_persists_reviews(tmp_path) -> None:
+    store_path = tmp_path / "reviews.json"
+    service = TraceReviewService(store_path)
+
+    service.record_review(
+        source_id="REQ-9",
+        target_id="DES-9",
+        decision="accepted",
+        reviewer="analyst-c",
+        comments="Persist this decision.",
+    )
+
+    reloaded_service = TraceReviewService(store_path)
+    reviews = reloaded_service.list_reviews()
+
+    assert len(reviews) == 1
+    assert reviews[0].source_id == "REQ-9"
+    assert reviews[0].target_id == "DES-9"
+    assert reviews[0].decision == "accepted"
+    assert reviews[0].reviewer == "analyst-c"
+    assert reviews[0].comments == "Persist this decision."
 
 
 def test_impact_analysis_contract() -> None:
