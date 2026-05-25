@@ -19,6 +19,8 @@ ATRI supports continuous traceability intelligence across requirements, design, 
   - Persisted node and edge store for replayable impact analysis and graph sync.
 - Analyst Review Workflow
   - Accept/reject control for suggested links with reviewer comments and status tracking.
+- Audit Trail
+  - Append-only record of review and graph sync actions for IV&V evidence retention.
 - Evidence Store
   - Stores links, confidence, rationale, provenance, and review outcomes.
 - API + Dashboard Feed
@@ -48,6 +50,9 @@ ATRI supports continuous traceability intelligence across requirements, design, 
 
 6. Graph Sync and Impact
   - Artifact and link sync -> persisted graph update -> impact traversal from stored edges.
+
+7. Audit Capture
+  - Review decision or graph sync -> audit event persisted -> evidence available for review.
 
 ## 5. Expanded Domain Coverage
 

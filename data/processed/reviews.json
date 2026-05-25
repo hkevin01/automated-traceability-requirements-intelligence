@@ -12,5 +12,12 @@
     "reviewer": "analyst-b",
     "source_id": "REQ-2",
     "target_id": "CODE-2"
+  },
+  {
+    "comments": "Audit this action.",
+    "decision": "accepted",
+    "reviewer": "analyst-e",
+    "source_id": "REQ-40",
+    "target_id": "DES-40"
   }
 ]

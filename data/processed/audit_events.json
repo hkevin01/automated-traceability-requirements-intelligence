@@ -1,0 +1,38 @@
+[
+  {
+    "actor": "analyst-a",
+    "details": {
+      "decision": "accepted"
+    },
+    "event_type": "trace_review_decision",
+    "subject_id": "REQ-1->DES-1",
+    "timestamp": "2026-05-25T12:49:00.342562+00:00"
+  },
+  {
+    "actor": "analyst-b",
+    "details": {
+      "decision": "rejected"
+    },
+    "event_type": "trace_review_decision",
+    "subject_id": "REQ-2->CODE-2",
+    "timestamp": "2026-05-25T12:49:00.346928+00:00"
+  },
+  {
+    "actor": "analyst-a",
+    "details": {
+      "decision": "accepted"
+    },
+    "event_type": "trace_review_decision",
+    "subject_id": "REQ-1->DES-1",
+    "timestamp": "2026-05-25T12:49:12.537129+00:00"
+  },
+  {
+    "actor": "analyst-b",
+    "details": {
+      "decision": "rejected"
+    },
+    "event_type": "trace_review_decision",
+    "subject_id": "REQ-2->CODE-2",
+    "timestamp": "2026-05-25T12:49:12.541728+00:00"
+  }
+]

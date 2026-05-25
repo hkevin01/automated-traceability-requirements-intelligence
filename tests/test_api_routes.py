@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from atri.api.routes import impact as impact_route
 from atri.api.routes import traceability as traceability_route
+from atri.core.services.audit import TraceAuditService
 from atri.core.services.graph_store import TraceGraphStore
 from atri.core.services.review import TraceReviewService
 from atri.main import app
@@ -97,7 +98,20 @@ def test_traceability_suggestions_contract() -> None:
     }
 
 
-def test_traceability_review_workflow_contract() -> None:
+def test_traceability_review_workflow_contract(tmp_path, monkeypatch) -> None:
+    review_store = tmp_path / "reviews.json"
+    audit_store = tmp_path / "audit_events.json"
+    monkeypatch.setattr(
+        traceability_route,
+        "review_service",
+        TraceReviewService(review_store),
+    )
+    monkeypatch.setattr(
+        traceability_route,
+        "audit_service",
+        TraceAuditService(audit_store),
+    )
+
     accepted_response = client.post(
         "/api/v1/traceability/review",
         json={
@@ -173,6 +187,44 @@ def test_traceability_review_workflow_contract() -> None:
     ]
 
 
+def test_audit_events_record_review_actions(tmp_path, monkeypatch) -> None:
+    audit_store = tmp_path / "audit_events.json"
+    monkeypatch.setattr(
+        traceability_route,
+        "audit_service",
+        TraceAuditService(audit_store),
+    )
+
+    response = client.post(
+        "/api/v1/traceability/review",
+        json={
+            "source_id": "REQ-40",
+            "target_id": "DES-40",
+            "decision": "accepted",
+            "reviewer": "analyst-e",
+            "comments": "Audit this action.",
+        },
+    )
+
+    assert response.status_code == 200
+
+    audit_events_response = client.get("/api/v1/traceability/audit/events")
+
+    assert audit_events_response.status_code == 200
+    assert audit_events_response.json()[0]["event_type"] == "trace_review_decision"
+    assert audit_events_response.json()[0]["subject_id"] == "REQ-40->DES-40"
+    assert audit_events_response.json()[0]["actor"] == "analyst-e"
+    assert audit_events_response.json()[0]["details"] == {"decision": "accepted"}
+
+    summary_response = client.get("/api/v1/traceability/audit/summary")
+
+    assert summary_response.status_code == 200
+    assert summary_response.json() == {
+        "trace_review_decision": 1,
+        "total_events": 1,
+    }
+
+
 def test_trace_review_service_persists_reviews(tmp_path) -> None:
     store_path = tmp_path / "reviews.json"
     service = TraceReviewService(store_path)
@@ -201,6 +253,11 @@ def test_trace_graph_store_persists_and_drives_impact(tmp_path, monkeypatch) -> 
     graph_store = TraceGraphStore(store_path)
     monkeypatch.setattr(traceability_route, "graph_store", graph_store)
     monkeypatch.setattr(impact_route.service, "graph_store", graph_store)
+    monkeypatch.setattr(
+        traceability_route,
+        "audit_service",
+        TraceAuditService(tmp_path / "audit_events.json"),
+    )
 
     sync_response = client.post(
         "/api/v1/traceability/graph",
@@ -250,6 +307,14 @@ def test_trace_graph_store_persists_and_drives_impact(tmp_path, monkeypatch) -> 
     assert sync_response.status_code == 200
     assert sync_response.json() == {"artifact_count": 3, "link_count": 2}
 
+    audit_summary_response = client.get("/api/v1/traceability/audit/summary")
+
+    assert audit_summary_response.status_code == 200
+    assert audit_summary_response.json() == {
+        "graph_sync": 1,
+        "total_events": 1,
+    }
+
     impact_response = client.post(
         "/api/v1/impact/analyze",
         json={"changed_ids": ["REQ-10"], "depth": 2},
@@ -293,6 +358,25 @@ def test_trace_graph_store_reload(tmp_path) -> None:
     reloaded_store = TraceGraphStore(store_path)
 
     assert reloaded_store.adjacency_map() == {"REQ-20": ["DES-20"], "DES-20": []}
+
+
+def test_trace_audit_service_persists_events(tmp_path) -> None:
+    store_path = tmp_path / "audit_events.json"
+    audit_service = TraceAuditService(store_path)
+
+    audit_service.record_event(
+        event_type="trace_review_decision",
+        subject_id="REQ-50->DES-50",
+        actor="analyst-f",
+        details={"decision": "rejected"},
+    )
+
+    reloaded_service = TraceAuditService(store_path)
+
+    assert reloaded_service.summarize_events() == {
+        "trace_review_decision": 1,
+        "total_events": 1,
+    }
 
 
 def test_impact_analysis_contract() -> None:

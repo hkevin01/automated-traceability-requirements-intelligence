@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from atri.api.schemas import (
+    AuditEventResponse,
+    AuditSummaryResponse,
     GraphSyncRequest,
     GraphSyncResponse,
     ReviewDecisionRequest,
@@ -12,6 +14,7 @@ from atri.api.schemas import (
 )
 from atri.config import settings
 from atri.core.models.trace import Artifact
+from atri.core.services.audit import TraceAuditService
 from atri.core.services.graph_store import TraceGraphStore
 from atri.core.services.linking import LinkSuggestionService
 from atri.core.services.review import TraceReviewService
@@ -20,6 +23,7 @@ router = APIRouter(prefix="/api/v1/traceability", tags=["traceability"])
 service = LinkSuggestionService()
 review_service = TraceReviewService(settings.review_store_path)
 graph_store = TraceGraphStore(settings.graph_store_path)
+audit_service = TraceAuditService(settings.audit_store_path)
 
 
 class ArtifactIn(BaseModel):
@@ -63,6 +67,12 @@ def review_trace_link(payload: ReviewDecisionRequest) -> dict:
         reviewer=payload.reviewer,
         comments=payload.comments,
     )
+    audit_service.record_event(
+        event_type="trace_review_decision",
+        subject_id=f"{record.source_id}->{record.target_id}",
+        actor=record.reviewer,
+        details={"decision": record.decision},
+    )
     return {
         "review": ReviewStatusResponse(
             source_id=record.source_id,
@@ -99,7 +109,35 @@ def sync_graph(payload: GraphSyncRequest) -> dict:
         artifacts=[item.model_dump() for item in payload.artifacts],
         links=[item.model_dump() for item in payload.links],
     )
+    audit_service.record_event(
+        event_type="graph_sync",
+        subject_id="trace_graph",
+        actor="system",
+        details={
+            "artifact_count": str(len(payload.artifacts)),
+            "link_count": str(len(payload.links)),
+        },
+    )
     return {
         "artifact_count": len(payload.artifacts),
         "link_count": len(payload.links),
     }
+
+
+@router.get("/audit/events", response_model=list[AuditEventResponse])
+def list_audit_events() -> list[dict]:
+    return [
+        {
+            "event_type": event.event_type,
+            "subject_id": event.subject_id,
+            "actor": event.actor,
+            "timestamp": event.timestamp,
+            "details": event.details,
+        }
+        for event in audit_service.list_events()
+    ]
+
+
+@router.get("/audit/summary")
+def audit_summary() -> dict:
+    return audit_service.summarize_events()

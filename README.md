@@ -20,6 +20,7 @@ Traditional traceability work is labor-intensive. ATRI is designed to reduce ana
 - Intelligent gap detection for orphan requirements, missing tests, weak mitigations, and incomplete verification
 - Analyst review workflow for accepting and rejecting suggested trace links
 - Persisted trace graph for replayable impact analysis across stored links
+- Audit trail for review and graph sync actions
 - Real-time traceability dashboards for coverage, volatility, change activity, and risk posture
 
 ## Initial Architecture
@@ -52,6 +53,8 @@ See docs in `docs/` for detailed architecture and IV&V alignment.
 - `GET /api/v1/traceability/reviews` - list review decisions
 - `GET /api/v1/traceability/reviews/summary` - review counts by status
 - `POST /api/v1/traceability/graph` - persist artifacts and trace links for impact analysis
+- `GET /api/v1/traceability/audit/events` - list audit events for traceability actions
+- `GET /api/v1/traceability/audit/summary` - count audit events by type
 - `POST /api/v1/impact/analyze` - impact analysis from changed artifacts
 - `POST /api/v1/gaps/detect` - detect missing or weak trace links
 
@@ -71,4 +74,5 @@ See docs in `docs/` for detailed architecture and IV&V alignment.
 - Add authn/authz, review state, and audit events
 - Expand the review workflow with persistence and reviewer assignment
 - Add a true graph database backend behind the trace graph store adapter
+- Persist audit events to an immutable backend and expose reviewer history drill-downs
 - Ship frontend dashboard (React) connected to summary, capability, and drill-down APIs

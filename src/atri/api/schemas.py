@@ -80,6 +80,18 @@ class GraphSyncResponse(BaseModel):
     link_count: int = Field(ge=0)
 
 
+class AuditEventResponse(BaseModel):
+    event_type: str
+    subject_id: str
+    actor: str
+    timestamp: str
+    details: dict[str, str]
+
+
+class AuditSummaryResponse(BaseModel):
+    total_events: int = Field(ge=0)
+
+
 class ImpactFindingResponse(BaseModel):
     artifact_id: str
     score: float = Field(ge=0.0, le=1.0)
