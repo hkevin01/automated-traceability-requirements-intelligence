@@ -16,3 +16,9 @@
 {"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:27:39.737661+00:00"}
 {"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:27:39.743688+00:00"}
 {"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:27:39.749432+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-26T14:31:45.619517+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-26T14:31:45.619696+00:00"}
+{"comments": "Confirmed by design review evidence.", "decision": "accepted", "reviewer": "analyst-a", "source_id": "REQ-1", "target_id": "DES-1", "timestamp": "2026-05-26T14:31:45.628893+00:00"}
+{"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:31:45.630773+00:00"}
+{"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:31:45.636238+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:31:45.641337+00:00"}
