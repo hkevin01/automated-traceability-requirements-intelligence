@@ -10,6 +10,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - neo4j
 
   postgres:
     image: postgres:16
@@ -27,5 +28,20 @@ services:
     ports:
       - "6379:6379"
 
+  neo4j:
+    image: neo4j:5
+    environment:
+      NEO4J_AUTH: neo4j/atri-neo4j-secret
+      NEO4J_PLUGINS: '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - atri-neo4j:/data
+      - atri-neo4j-logs:/logs
+
 volumes:
   atri-postgres:
+  atri-neo4j:
+  atri-neo4j-logs:

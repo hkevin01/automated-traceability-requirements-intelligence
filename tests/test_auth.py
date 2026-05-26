@@ -88,7 +88,7 @@ class TestGetCurrentUser:
         assert resp.status_code == 401
 
     def test_static_secret_accepted(self, app_client, monkeypatch):
-        monkeypatch.setattr(settings, "secret_key", "my-static-secret")
+        monkeypatch.setattr(settings, "auth_bearer_token", "my-static-secret")
         resp = app_client.get("/whoami", headers={"Authorization": "Bearer my-static-secret"})
         assert resp.status_code == 200
 
