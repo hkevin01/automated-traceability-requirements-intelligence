@@ -524,3 +524,103 @@ def test_gap_detection_contract() -> None:
             },
         ]
     }
+
+# ---------------------------------------------------------------------------
+# Dashboard drilldown endpoints
+# ---------------------------------------------------------------------------
+
+def test_drilldown_reviews_empty(tmp_path, monkeypatch) -> None:
+    review_service = TraceReviewService(tmp_path / "r.json", tmp_path / "rh.jsonl")
+    monkeypatch.setattr(dashboard_route, "review_service", review_service)
+    resp = client.get("/api/v1/dashboard/drilldown/reviews")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_drilldown_reviews_with_data(tmp_path, monkeypatch) -> None:
+    review_service = TraceReviewService(tmp_path / "r.json", tmp_path / "rh.jsonl")
+    review_service.record_review("A", "B", decision="accepted", reviewer="alice")
+    review_service.record_review("C", "D", decision="accepted", reviewer="alice")
+    monkeypatch.setattr(dashboard_route, "review_service", review_service)
+    resp = client.get("/api/v1/dashboard/drilldown/reviews")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert any(entry["reviewer"] == "alice" and entry["total"] == 2 for entry in data)
+
+
+def test_drilldown_audit_empty(tmp_path, monkeypatch) -> None:
+    audit_service = TraceAuditService(tmp_path / "ev.jsonl")
+    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
+    resp = client.get("/api/v1/dashboard/drilldown/audit")
+    assert resp.status_code == 200
+    assert resp.json() == []
+
+
+def test_drilldown_audit_with_data(tmp_path, monkeypatch) -> None:
+    audit_service = TraceAuditService(tmp_path / "ev.jsonl")
+    audit_service.record_event("link_created", "REQ-1->TC-1", actor="bob")
+    audit_service.record_event("link_created", "REQ-2->TC-2", actor="bob")
+    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
+    resp = client.get("/api/v1/dashboard/drilldown/audit")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert any(entry["actor"] == "bob" and entry["total"] == 2 for entry in data)
+
+
+def test_drilldown_audit_subject(tmp_path, monkeypatch) -> None:
+    audit_service = TraceAuditService(tmp_path / "ev.jsonl")
+    audit_service.record_event("ev", "REQ-X->TC-X", actor="carol")
+    audit_service.record_event("ev", "REQ-Y->TC-Y", actor="carol")
+    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
+    resp = client.get("/api/v1/dashboard/drilldown/audit/subject/REQ-X->TC-X")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["actor"] == "carol"
+    assert data[0]["subject_id"] == "REQ-X->TC-X"
+
+
+def test_drilldown_graph(tmp_path, monkeypatch) -> None:
+    from atri.api.routes import dashboard as dash
+    monkeypatch.setattr(dashboard_route, "graph_store", TraceGraphStore(tmp_path / "g.json"))
+    resp = client.get("/api/v1/dashboard/drilldown/graph")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "stats" in data
+    assert "adjacency_map" in data
+
+
+# ---------------------------------------------------------------------------
+# Ingestion route
+# ---------------------------------------------------------------------------
+
+def test_ingestion_sources_list() -> None:
+    resp = client.get("/api/v1/ingestion/sources")
+    assert resp.status_code == 200
+    assert "sources" in resp.json()
+    assert "doors" in resp.json()["sources"]
+
+
+def test_ingestion_upload_unknown_source() -> None:
+    from io import BytesIO
+    resp = client.post(
+        "/api/v1/ingestion/upload/nonexistent",
+        files={"file": ("test.csv", BytesIO(b"id,title\n1,X"), "text/csv")},
+    )
+    assert resp.status_code == 400
+
+
+def test_ingestion_upload_doors_csv(tmp_path, monkeypatch) -> None:
+    import atri.api.routes.ingestion as ing_route
+    from atri.config import settings as _settings
+    monkeypatch.setattr(_settings, "ingestion_store_path", str(tmp_path / "ing.jsonl"))
+    csv_content = b"id,title,body\nREQ-1,Login,Users must authenticate."
+    from io import BytesIO
+    resp = client.post(
+        "/api/v1/ingestion/upload/doors",
+        files={"file": ("reqs.csv", BytesIO(csv_content), "text/csv")},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["artifact_count"] == 1
+    assert data["artifacts"][0]["artifact_id"] == "REQ-1"

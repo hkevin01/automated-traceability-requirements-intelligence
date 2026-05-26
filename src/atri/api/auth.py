@@ -141,7 +141,15 @@ def get_current_user(
         default_roles = [r.strip() for r in settings.auth_default_roles.split(",") if r.strip()]
         return UserPrincipal(username=settings.auth_default_user, roles=default_roles)
 
-    # JWT validation
+    # OIDC / SSO validation (when configured)
+    if settings.oidc_enabled and (settings.oidc_issuer or settings.oidc_jwks_uri):
+        from atri.api.oidc import extract_roles_from_claims, validate_oidc_token  # noqa: PLC0415
+        claims = validate_oidc_token(token)  # raises 401/503 on failure
+        username = claims.get("email") or claims.get("preferred_username") or claims.get("sub", "oidc-user")
+        roles = extract_roles_from_claims(claims)
+        return UserPrincipal(username=str(username), roles=roles)
+
+    # Local JWT validation
     payload = _decode_jwt(token)
     if payload is None:
         raise HTTPException(

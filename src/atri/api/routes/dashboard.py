@@ -10,7 +10,10 @@ from atri.core.services.graph_store import TraceGraphStore
 from atri.core.services.review import TraceReviewService
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])
-review_service = TraceReviewService(settings.review_store_path)
+review_service = TraceReviewService(
+    settings.review_store_path,
+    history_path=settings.review_history_store_path,
+)
 audit_service = TraceAuditService(settings.audit_store_path)
 graph_store = TraceGraphStore(settings.graph_store_path)
 
@@ -245,3 +248,56 @@ def summary() -> dict:
 @router.get("/view", response_class=HTMLResponse)
 def view() -> HTMLResponse:
     return HTMLResponse(_render_dashboard_html(_build_dashboard_snapshot()))
+
+
+@router.get("/drilldown/reviews")
+def drilldown_reviews() -> list[dict]:
+    """
+    ID: ATRI-DASH-003
+    Purpose: Return per-reviewer review breakdown for dashboard drill-down.
+    Outputs: list of dicts with reviewer, total, accepted, rejected, pending counts.
+    """
+    return review_service.reviewer_summary()
+
+
+@router.get("/drilldown/audit")
+def drilldown_audit() -> list[dict]:
+    """
+    ID: ATRI-DASH-004
+    Purpose: Return per-actor audit event breakdown for the dashboard.
+    Outputs: list of dicts with actor and event-type counts.
+    """
+    return audit_service.actor_summary()
+
+
+@router.get("/drilldown/audit/subject/{subject_id}")
+def drilldown_audit_subject(subject_id: str) -> list[dict]:
+    """
+    ID: ATRI-DASH-005
+    Purpose: Return all audit events for a specific artifact or link subject.
+    Inputs: subject_id - the artifact or link identifier.
+    Outputs: Chronological list of audit event dicts.
+    """
+    return [
+        {
+            "event_type": e.event_type,
+            "subject_id": e.subject_id,
+            "actor": e.actor,
+            "timestamp": e.timestamp,
+            "details": e.details,
+        }
+        for e in audit_service.subject_history(subject_id)
+    ]
+
+
+@router.get("/drilldown/graph")
+def drilldown_graph() -> dict:
+    """
+    ID: ATRI-DASH-006
+    Purpose: Return full graph stats and adjacency map for dashboard graph view.
+    Outputs: dict with stats and adjacency_map fields.
+    """
+    return {
+        "stats": graph_store.stats(),
+        "adjacency_map": graph_store.adjacency_map(),
+    }

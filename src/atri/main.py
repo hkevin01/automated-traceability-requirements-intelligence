@@ -9,6 +9,7 @@ from atri.api.routes.gaps import router as gaps_router
 from atri.api.routes.health import router as health_router
 from atri.api.routes.impact import router as impact_router
 from atri.api.routes.ingestion import router as ingestion_router
+from atri.api.routes.stream import router as stream_router
 from atri.api.routes.traceability import router as traceability_router
 from atri.config import settings
 
@@ -43,3 +44,4 @@ app.include_router(traceability_router)
 app.include_router(impact_router)
 app.include_router(gaps_router)
 app.include_router(ingestion_router)
+app.include_router(stream_router)

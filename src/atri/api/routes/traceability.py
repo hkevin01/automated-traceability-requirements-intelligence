@@ -22,7 +22,10 @@ from atri.core.services.review import TraceReviewService
 
 router = APIRouter(prefix="/api/v1/traceability", tags=["traceability"])
 service = LinkSuggestionService()
-review_service = TraceReviewService(settings.review_store_path)
+review_service = TraceReviewService(
+    settings.review_store_path,
+    history_path=settings.review_history_store_path,
+)
 graph_store = TraceGraphStore(settings.graph_store_path)
 audit_service = TraceAuditService(settings.audit_store_path)
 
@@ -264,3 +267,32 @@ def vector_query(payload: VectorQueryRequest) -> dict:
         min_score=payload.min_score,
     )
     return {"results": results}
+
+
+# ---------------------------------------------------------------------------
+# LLM rationale enrichment
+# ---------------------------------------------------------------------------
+
+class LinkExplainRequest(BaseModel):
+    source: ArtifactIn
+    target: ArtifactIn
+    context: str = ""
+
+
+@router.post("/link-explain")
+def link_explain(payload: LinkExplainRequest) -> dict:
+    """
+    ID: ATRI-TRACE-014
+    Purpose: Generate an LLM-enriched rationale for a proposed trace link.
+    Inputs: source and target ArtifactIn; optional context string.
+    Outputs: RationaleResult dict with rationale text, model, is_fallback flag.
+    Failure modes: Always returns a result (heuristic fallback if LLM unavailable).
+    """
+    from atri.core.services.llm_rationale import LLMRationaleService  # noqa: PLC0415
+    svc = LLMRationaleService()
+    result = svc.explain(
+        source=payload.source.model_dump(),
+        target=payload.target.model_dump(),
+        context=payload.context,
+    )
+    return result.to_dict()

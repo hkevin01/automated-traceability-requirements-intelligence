@@ -36,8 +36,24 @@ class Settings(BaseSettings):
 
     # --- AI providers (optional, not required for core functionality) ---
     openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
     azure_openai_endpoint: str = ""
     azure_openai_api_key: str = ""
+    azure_openai_deployment: str = "gpt-4o-mini"
+    llm_rationale_enabled: bool = False
+    llm_rationale_cache_path: str = "data/processed/llm_rationale_cache.json"
+
+    # --- OIDC / SSO ---
+    oidc_enabled: bool = False
+    oidc_issuer: str = ""
+    oidc_client_id: str = ""
+    oidc_jwks_uri: str = ""
+    oidc_audience: str = ""
+
+    # --- Multi-tenancy ---
+    multi_tenant_enabled: bool = False
+    default_tenant_id: str = "default"
+    tenant_data_root: str = "data/tenants"
 
     model_config = SettingsConfigDict(
         env_file=".env",

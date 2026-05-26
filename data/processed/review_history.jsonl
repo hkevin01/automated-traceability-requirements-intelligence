@@ -22,3 +22,33 @@
 {"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:31:45.630773+00:00"}
 {"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:31:45.636238+00:00"}
 {"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:31:45.641337+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-26T14:34:29.257604+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-26T14:34:29.257846+00:00"}
+{"comments": "Confirmed by design review evidence.", "decision": "accepted", "reviewer": "analyst-a", "source_id": "REQ-1", "target_id": "DES-1", "timestamp": "2026-05-26T14:34:29.268179+00:00"}
+{"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:34:29.269913+00:00"}
+{"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:34:29.276071+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:34:29.283050+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-26T14:36:37.433975+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-26T14:36:37.434156+00:00"}
+{"comments": "Confirmed by design review evidence.", "decision": "accepted", "reviewer": "analyst-a", "source_id": "REQ-1", "target_id": "DES-1", "timestamp": "2026-05-26T14:36:37.443817+00:00"}
+{"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:36:37.445907+00:00"}
+{"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:36:37.452289+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:36:37.457660+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-26T14:42:15.725345+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-26T14:42:15.725568+00:00"}
+{"comments": "Confirmed by design review evidence.", "decision": "accepted", "reviewer": "analyst-a", "source_id": "REQ-1", "target_id": "DES-1", "timestamp": "2026-05-26T14:42:15.737320+00:00"}
+{"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:42:15.742296+00:00"}
+{"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:42:15.750318+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:42:15.756242+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-26T14:42:28.808207+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-26T14:42:28.808382+00:00"}
+{"comments": "Confirmed by design review evidence.", "decision": "accepted", "reviewer": "analyst-a", "source_id": "REQ-1", "target_id": "DES-1", "timestamp": "2026-05-26T14:42:28.817770+00:00"}
+{"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:42:28.820225+00:00"}
+{"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:42:28.826383+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:42:28.831672+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-26T14:43:21.896192+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-26T14:43:21.896384+00:00"}
+{"comments": "Confirmed by design review evidence.", "decision": "accepted", "reviewer": "analyst-a", "source_id": "REQ-1", "target_id": "DES-1", "timestamp": "2026-05-26T14:43:21.906287+00:00"}
+{"comments": "No direct implementation evidence.", "decision": "rejected", "reviewer": "analyst-b", "source_id": "REQ-2", "target_id": "CODE-2", "timestamp": "2026-05-26T14:43:21.908059+00:00"}
+{"comments": "Audit this action.", "decision": "accepted", "reviewer": "analyst-e", "source_id": "REQ-40", "target_id": "DES-40", "timestamp": "2026-05-26T14:43:21.914238+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T14:43:21.919833+00:00"}

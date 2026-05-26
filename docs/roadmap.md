@@ -80,3 +80,112 @@ Acceptance criteria:
 - Add vector retrieval for semantic search.
 - Add graph persistence behind the existing services.
 - Add review-state tracking for proposed links.
+---
+
+### 6. LLM Enrichment Engine - IMPLEMENTED
+
+**Goal:** Generate human-readable rationale for every trace link using LLM intelligence, replacing opaque token-overlap scores with engineer-friendly explanations.
+
+**Status:** Complete. Shipped in the current sprint.
+
+**Acceptance criteria:**
+
+- `POST /api/v1/traceability/link-explain` returns a rationale string for any source/target artifact pair.
+- Fallback heuristic is returned when `ATRI_LLM_RATIONALE_ENABLED=false` (default) or when the provider API is unreachable.
+- Results are cached to `data/processed/llm_rationale_cache.json` keyed by SHA-256 of artifact bodies; repeated calls do not cost tokens.
+- Both OpenAI Chat Completions API and Azure OpenAI endpoints are supported via env vars.
+- Unit tests cover: fallback path, cache hit, `to_dict()` contract, cache clear, dataclass defaults.
+
+**Implementation:**
+
+- `src/atri/core/services/llm_rationale.py` - `LLMRationaleService` + `RationaleResult`
+- `src/atri/api/routes/traceability.py` - `POST /link-explain` endpoint
+- New config fields: `ATRI_LLM_RATIONALE_ENABLED`, `ATRI_OPENAI_API_KEY`, `ATRI_OPENAI_MODEL`, `ATRI_AZURE_OPENAI_*`
+
+---
+
+### 7. Real-Time Streaming Dashboard - IMPLEMENTED
+
+**Goal:** Push live audit events and KPI snapshots to dashboard clients without polling.
+
+**Status:** Complete. Shipped in the current sprint.
+
+**Acceptance criteria:**
+
+- `WS /api/v1/stream/events` accepts WebSocket connections with optional `?topic=audit|dashboard|all`.
+- Dashboard snapshot is pushed immediately on connect for `topic=dashboard` or `topic=all`.
+- New audit events are pushed within the next poll interval (default 2 s).
+- `GET /api/v1/stream/status` returns the count of connected clients.
+- `broadcast_audit_event()` helper is importable by other services for push notifications.
+
+**Implementation:**
+
+- `src/atri/api/routes/stream.py` - WebSocket router with `_ConnectionManager` pub-sub and async poll loop
+- `src/atri/main.py` - stream router registered
+- Tests in `tests/test_stream.py`
+
+---
+
+### 8. SSO / OIDC Integration - IMPLEMENTED
+
+**Goal:** Allow enterprise deployments to authenticate users through their existing Identity Provider (Okta, Azure AD, Keycloak, Auth0) without managing a separate ATRI secret.
+
+**Status:** Complete. Shipped in the current sprint.
+
+**Acceptance criteria:**
+
+- When `ATRI_OIDC_ENABLED=true`, Bearer tokens signed by the configured IdP are accepted without needing `ATRI_AUTH_BEARER_TOKEN`.
+- JWKS keys are fetched from `ATRI_OIDC_JWKS_URI` (or discovered from `{issuer}/.well-known/jwks.json`) and cached for 5 minutes.
+- Roles/groups are extracted from `roles`, `groups`, `cognito:groups`, or `realm_access.roles` claims.
+- OIDC validation is transparent to all existing ATRI role guards (`require_analyst`, `require_admin`).
+- Unit tests cover: list roles claim, groups claim, Keycloak realm_access format, comma-delimited string, missing-claim fallback to `viewer`.
+
+**Implementation:**
+
+- `src/atri/api/oidc.py` - `validate_oidc_token()`, `extract_roles_from_claims()`, JWKS cache
+- `src/atri/api/auth.py` - OIDC path added to `get_current_user()` before local JWT check
+- New config fields: `ATRI_OIDC_ENABLED`, `ATRI_OIDC_ISSUER`, `ATRI_OIDC_CLIENT_ID`, `ATRI_OIDC_JWKS_URI`, `ATRI_OIDC_AUDIENCE`
+
+---
+
+### 9. Multi-Tenant Graph Isolation - IMPLEMENTED
+
+**Goal:** Allow multiple independent programs (tenants) to share a single ATRI deployment with complete data isolation at the storage layer.
+
+**Status:** Complete. Shipped in the current sprint.
+
+**Acceptance criteria:**
+
+- When `ATRI_MULTI_TENANT_ENABLED=true`, each tenant's data lives under `data/tenants/{tenant_id}/`.
+- Tenant is resolved from the `X-Tenant-ID` request header; missing header falls back to `ATRI_DEFAULT_TENANT_ID`.
+- `tenant_id` is validated against `[a-zA-Z0-9_-]{1,64}` to prevent path traversal attacks.
+- All store paths (reviews, history, graph, audit, ingestion, vector index) are isolated per tenant.
+- In single-tenant mode (`ATRI_MULTI_TENANT_ENABLED=false`, the default), behaviour is identical to pre-feature operation.
+- Unit tests cover: single-tenant passthrough, path isolation between tenants, invalid ID rejection (400), path traversal prevention, default ID fallback.
+
+**Implementation:**
+
+- `src/atri/core/tenancy.py` - `TenantContext` frozen dataclass + `resolve_tenant()` FastAPI dependency
+- New config fields: `ATRI_MULTI_TENANT_ENABLED`, `ATRI_DEFAULT_TENANT_ID`, `ATRI_TENANT_DATA_ROOT`
+- Tests in `tests/test_tenant.py`
+
+---
+
+## Delivery Order (Updated)
+
+| # | Epic | Status |
+|---|------|--------|
+| <sub>1</sub> | <sub>Requirements Ingestion Layer</sub> | <sub>✅ Complete</sub> |
+| <sub>2</sub> | <sub>Intelligent Trace Linking</sub> | <sub>✅ Complete</sub> |
+| <sub>3</sub> | <sub>Impact Analysis</sub> | <sub>✅ Complete</sub> |
+| <sub>4</sub> | <sub>Gap Detection</sub> | <sub>✅ Complete</sub> |
+| <sub>5</sub> | <sub>Audit Trail</sub> | <sub>✅ Complete</sub> |
+| <sub>6</sub> | <sub>LLM Enrichment Engine</sub> | <sub>✅ Complete</sub> |
+| <sub>7</sub> | <sub>Real-Time Streaming Dashboard</sub> | <sub>✅ Complete</sub> |
+| <sub>8</sub> | <sub>SSO / OIDC Integration</sub> | <sub>✅ Complete</sub> |
+| <sub>9</sub> | <sub>Multi-Tenant Graph Isolation</sub> | <sub>✅ Complete</sub> |
+| <sub>10</sub> | <sub>Neo4j / Graph DB Production Backend</sub> | <sub>⭕ Planned</sub> |
+| <sub>11</sub> | <sub>CI/CD Pipeline & Deployment Automation</sub> | <sub>⭕ Planned</sub> |
+| <sub>12</sub> | <sub>Frontend Polish & UX Hardening</sub> | <sub>⭕ Planned</sub> |
+
+> **Note:** Epics 1-9 are fully implemented with passing unit and integration tests. Epics 10-12 represent the next investment phase for production hardening.
