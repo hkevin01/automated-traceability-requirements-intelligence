@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse
 from atri.api.schemas import DashboardSummaryResponse
 from atri.core.services.audit import TraceAuditService
 from atri.core.services.graph_store import TraceGraphStore
+from atri.core.services.graph_factory import make_graph_store
 from atri.core.services.review import TraceReviewService
 from atri.core.tenancy import TenantContext, resolve_tenant
 
@@ -250,7 +251,7 @@ def view(tenant: TenantContext = Depends(resolve_tenant)) -> HTMLResponse:
         history_path=str(tenant.review_history_store_path),
     )
     audit_svc = TraceAuditService(str(tenant.audit_store_path))
-    gs = TraceGraphStore(str(tenant.graph_store_path))
+    gs = make_graph_store(str(tenant.graph_store_path))
     return HTMLResponse(_render_dashboard_html(_build_dashboard_snapshot(review_svc, audit_svc, gs)))
 
 
@@ -308,7 +309,7 @@ def drilldown_graph(tenant: TenantContext = Depends(resolve_tenant)) -> dict:
     Purpose: Return full graph stats and adjacency map for dashboard graph view.
     Outputs: dict with stats and adjacency_map fields.
     """
-    gs = TraceGraphStore(str(tenant.graph_store_path))
+    gs = make_graph_store(str(tenant.graph_store_path))
     return {
         "stats": gs.stats(),
         "adjacency_map": gs.adjacency_map(),

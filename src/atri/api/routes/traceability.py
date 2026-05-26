@@ -35,6 +35,7 @@ from atri.api.schemas import (
 from atri.core.models.trace import Artifact
 from atri.core.services.audit import TraceAuditService
 from atri.core.services.graph_store import TraceGraphStore
+from atri.core.services.graph_factory import make_graph_store
 from atri.core.services.linking import LinkSuggestionService
 from atri.core.services.review import TraceReviewService
 from atri.core.tenancy import TenantContext, resolve_tenant
@@ -195,7 +196,7 @@ def sync_graph(
     ID: ATRI-TRACE-005
     Purpose: Replace the trace graph for the current tenant.
     """
-    gs = TraceGraphStore(str(tenant.graph_store_path))
+    gs = make_graph_store(str(tenant.graph_store_path))
     audit_svc = TraceAuditService(str(tenant.audit_store_path))
 
     gs.replace_graph(

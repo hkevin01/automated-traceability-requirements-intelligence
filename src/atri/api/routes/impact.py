@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from atri.api.schemas import ImpactAnalysisResponse
 from atri.core.services.graph_store import TraceGraphStore
+from atri.core.services.graph_factory import make_graph_store
 from atri.core.services.impact import ImpactAnalysisService
 from atri.core.tenancy import TenantContext, resolve_tenant
 
@@ -24,5 +25,5 @@ def analyze_impact(
     ID: ATRI-IMPACT-001
     Purpose: Analyze the downstream impact of changed artifacts for the current tenant.
     """
-    svc = ImpactAnalysisService(TraceGraphStore(str(tenant.graph_store_path)))
+    svc = ImpactAnalysisService(make_graph_store(str(tenant.graph_store_path)))
     return svc.analyze(payload.changed_ids, payload.adjacency, payload.depth)
