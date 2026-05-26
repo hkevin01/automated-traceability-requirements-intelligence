@@ -437,7 +437,9 @@ automated-traceability-requirements-intelligence/
 │   │   │   ├── linking.py       # Token-overlap heuristic linker
 │   │   │   ├── vector_store.py  # TF-IDF semantic search index
 │   │   │   ├── graph_store.py   # networkx DiGraph (local dev)
+│   │   │   ├── graph_factory.py # Auto-selects Neo4j vs local store
 │   │   │   ├── neo4j_store.py   # Neo4j adapter (production)
+│   │   │   ├── llm_rationale.py # OpenAI / Azure rationale generator
 │   │   │   ├── review.py        # Review lifecycle + JSONL history
 │   │   │   └── audit.py         # Immutable JSONL audit trail
 │   │   └── pipelines/           # (reserved for ML pipeline chains)
@@ -450,14 +452,16 @@ automated-traceability-requirements-intelligence/
 │       └── sysml.py             # SysML v1 XMI + v2 JSON
 ├── frontend/                    # React 18 + Vite dashboard
 │   ├── src/
-│   │   ├── App.jsx              # SPA router and nav bar
+│   │   ├── App.jsx              # SPA router and nav bar (5 pages)
 │   │   └── components/
-│   │       ├── Dashboard.jsx    # KPI cards + Recharts
+│   │       ├── Dashboard.jsx    # KPI cards + live WebSocket updates
 │   │       ├── Traceability.jsx # Review list and submission form
-│   │       └── Ingestion.jsx    # File upload form
+│   │       ├── ImpactAnalysis.jsx # Impact traversal page
+│   │       ├── Ingestion.jsx    # File upload form
+│   │       └── LiveFeed.jsx     # Real-time WebSocket event feed
 │   ├── package.json
 │   └── vite.config.js
-├── tests/                       # pytest test suite (114 tests)
+├── tests/                       # pytest test suite (120 tests)
 │   ├── test_health.py
 │   ├── test_api_routes.py
 │   ├── test_ingestion_adapters.py
@@ -467,7 +471,8 @@ automated-traceability-requirements-intelligence/
 │   ├── test_llm_rationale.py
 │   ├── test_stream.py
 │   ├── test_oidc.py
-│   └── test_tenant.py
+│   ├── test_tenant.py
+│   └── test_graph_factory.py
 ├── docker/
 │   ├── docker-compose.yml       # API + Postgres + Redis + Neo4j
 │   └── Dockerfile.api
@@ -586,6 +591,10 @@ make test
 - [x] Streaming dashboard WebSocket endpoint (`WS /api/v1/stream/events`)
 - [x] SSO / OIDC integration (Okta, Azure AD, Keycloak, Auth0)
 - [x] Multi-tenant graph isolation (`X-Tenant-ID` header, path-traversal safe)
+- [x] Neo4j production graph backend (factory auto-selects via `ATRI_GRAPH_BACKEND_URI`)
+- [x] CI/CD pipeline - matrix lint+test (Python 3.11/3.12), Docker smoke, GHCR release workflow
+- [x] Frontend polish - Impact Analysis page, Live Feed WebSocket page, live KPI updates
+- [x] 120 passing tests
 
 ---
 
@@ -611,9 +620,10 @@ gantt
     SSO / OIDC integration       :done,    sso,       2026-06-10, 2026-06-15
     Multi-tenant isolation       :done,    mt,        2026-06-15, 2026-05-26
     section Production Hardening
-    Neo4j graph DB backend       :         neo4j,     2026-06-01, 2026-06-20
-    CI/CD pipeline automation    :         cicd,      2026-06-20, 2026-07-05
-    Frontend polish & UX         :         ux,        2026-07-05, 2026-07-25
+    Neo4j graph DB backend       :done,    neo4j,     2026-05-26, 2026-05-27
+    CI/CD pipeline automation    :done,    cicd,      2026-05-27, 2026-05-28
+    Frontend polish & UX         :done,    ux,        2026-05-28, 2026-05-30
+    120 tests passing            :done,    tests2,    2026-05-30, 2026-05-31
 ```
 
 ---
@@ -624,7 +634,7 @@ Contributions are welcome. Please follow these conventions to keep the codebase 
 
 **Code style** - All Python files follow the comment header convention in `CONTRIBUTING.md`. Every module, class, and public method must have a NASA-style structured header with: ID, Purpose, Requirement, Inputs, Outputs, Preconditions, Postconditions, and Failure Modes fields.
 
-**Testing** - All new features must ship with tests. Tests live in `tests/` and use `pytest`. Service tests must use `tmp_path` to avoid polluting `data/processed/`. All 81 existing tests must continue to pass.
+**Testing** - All new features must ship with tests. Tests live in `tests/` and use `pytest`. Service tests must use `tmp_path` to avoid polluting `data/processed/`. All 120 existing tests must continue to pass.
 
 **Adapters** - New ingestion adapters should subclass `BaseIngestionAdapter`, implement `ingest()`, and be registered in `src/atri/api/routes/ingestion.py`. Include at least 5 unit tests covering happy path, edge cases, and the file-not-found error.
 

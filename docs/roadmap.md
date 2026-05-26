@@ -189,3 +189,70 @@ Acceptance criteria:
 | <sub>12</sub> | <sub>Frontend Polish & UX Hardening</sub> | <sub>⭕ Planned</sub> |
 
 > **Note:** Epics 1-9 are fully implemented with passing unit and integration tests. Epics 10-12 represent the next investment phase for production hardening.
+
+---
+
+### 10. Neo4j Production Graph Backend - IMPLEMENTED
+
+**Goal:** Allow production deployments to replace the in-process networkx JSON store with a Neo4j graph database without changing any route handler code.
+
+**Status:** Complete. Shipped in the current sprint.
+
+**Acceptance criteria:**
+
+- When `ATRI_GRAPH_BACKEND_URI` is set, all graph operations (replace_graph, adjacency_map, stats, get_downstream) are routed to Neo4jGraphStore.
+- When `ATRI_GRAPH_BACKEND_URI` is empty (default), the existing TraceGraphStore (JSON file) is used unchanged.
+- Neo4jGraphStore singleton is cached per process; `reset_neo4j_singleton()` is available for tests.
+- Neo4j connection failure is caught at startup; store returns no-op responses (available=False) so the API continues to serve requests.
+- Unit tests cover: local fallback, Neo4j selection, singleton caching, reset, unavailable graceful handling.
+
+**Implementation:**
+
+- `src/atri/core/services/graph_factory.py` - `make_graph_store()` factory + singleton management
+- `src/atri/api/routes/traceability.py`, `impact.py`, `dashboard.py` - switched from direct TraceGraphStore to `make_graph_store(tenant.graph_store_path)`
+- New tests in `tests/test_graph_factory.py` (6 tests)
+
+---
+
+### 11. CI/CD Pipeline Automation - IMPLEMENTED
+
+**Goal:** Automate linting, testing, Docker builds, and release image publishing on every push and version tag.
+
+**Status:** Complete. Shipped in the current sprint.
+
+**Acceptance criteria:**
+
+- On every push and pull request: ruff lint runs first; then tests run against Python 3.11 and 3.12 in parallel; then a Docker image smoke-build runs on test success.
+- Test coverage is uploaded to Codecov when the CODECOV_TOKEN secret is set.
+- On version tags (`v*`): Docker image is built and pushed to GitHub Container Registry with semver, minor-version, and SHA tags.
+- Dependabot keeps Python dependencies and GitHub Actions up to date with weekly PRs.
+
+**Implementation:**
+
+- `.github/workflows/ci.yml` - lint + matrix test + Docker smoke (enhanced from single-job)
+- `.github/workflows/release.yml` - GHCR Docker publish with Buildx cache
+- `.github/dependabot.yml` - pip and github-actions weekly updates
+
+---
+
+### 12. Frontend Polish and UX Hardening - IMPLEMENTED
+
+**Goal:** Upgrade the React frontend from scaffold to a functional tool with live data, impact analysis, and real-time event feed.
+
+**Status:** Complete. Shipped in the current sprint.
+
+**Acceptance criteria:**
+
+- Dashboard shows a live connection indicator (green dot); WebSocket dashboard topic auto-connects and updates KPI cards in real time without polling.
+- Dashboard has a manual Refresh button for users who prefer pull semantics.
+- Impact Analysis page submits artifact IDs to `POST /api/v1/impact/analyze` and renders upstream/downstream results table with distance badges.
+- Live Feed page connects to `WS /api/v1/stream/events` with topic selector (all/audit/dashboard); auto-reconnects every 5 s on disconnect; shows event count and clear button.
+- All pages show inline error messages when the API is unreachable.
+- Navigation includes Impact and Live Feed pages.
+
+**Implementation:**
+
+- `frontend/src/App.jsx` - updated nav (5 pages: Dashboard, Traceability, Impact, Ingestion, Live Feed)
+- `frontend/src/components/Dashboard.jsx` - WebSocket live KPI updates + Refresh button
+- `frontend/src/components/ImpactAnalysis.jsx` - new page for impact traversal
+- `frontend/src/components/LiveFeed.jsx` - new WebSocket event stream page
