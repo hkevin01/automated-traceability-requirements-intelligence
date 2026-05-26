@@ -64,7 +64,7 @@ class TestVectorSearchService:
         path = tmp_path / "idx2.json"
         svc = VectorSearchService(path)
         svc.build_index(sample_artifacts)
-        svc.save()
+        # build_index auto-saves; create a new instance and check
         svc2 = VectorSearchService(path)
         assert svc2.corpus_size() == 4
 

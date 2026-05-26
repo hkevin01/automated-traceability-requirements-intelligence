@@ -32,18 +32,18 @@ def enable_auth(monkeypatch):
 
 class TestTokenCreation:
     def test_creates_token_string(self):
-        token = create_access_token(sub="alice", roles=["analyst"])
+        token = create_access_token(username="alice", roles=["analyst"])
         assert isinstance(token, str)
         assert len(token) > 20
 
     def test_different_subjects_produce_different_tokens(self):
-        t1 = create_access_token(sub="alice", roles=["analyst"])
-        t2 = create_access_token(sub="bob", roles=["analyst"])
+        t1 = create_access_token(username="alice", roles=["analyst"])
+        t2 = create_access_token(username="bob", roles=["analyst"])
         assert t1 != t2
 
     def test_token_decodes_to_correct_subject(self):
         from jose import jwt as _jwt
-        token = create_access_token(sub="alice", roles=["admin"])
+        token = create_access_token(username="alice", roles=["admin"])
         data = _jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
         assert data["sub"] == "alice"
         assert "admin" in data["roles"]
@@ -78,7 +78,7 @@ def app_client():
 
 class TestGetCurrentUser:
     def test_valid_jwt_grants_access(self, app_client):
-        token = create_access_token(sub="alice", roles=["analyst"])
+        token = create_access_token(username="alice", roles=["analyst"])
         resp = app_client.get("/whoami", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         assert resp.json()["username"] == "alice"
@@ -99,22 +99,22 @@ class TestGetCurrentUser:
 
 class TestRBAC:
     def test_analyst_can_access_analyst_route(self, app_client):
-        token = create_access_token(sub="alice", roles=["analyst"])
+        token = create_access_token(username="alice", roles=["analyst"])
         resp = app_client.get("/analyst-only", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
 
     def test_viewer_cannot_access_analyst_route(self, app_client):
-        token = create_access_token(sub="viewer", roles=["viewer"])
+        token = create_access_token(username="viewer", roles=["viewer"])
         resp = app_client.get("/analyst-only", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 403
 
     def test_admin_can_access_admin_route(self, app_client):
-        token = create_access_token(sub="admin", roles=["admin"])
+        token = create_access_token(username="admin", roles=["admin"])
         resp = app_client.get("/admin-only", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
 
     def test_analyst_cannot_access_admin_route(self, app_client):
-        token = create_access_token(sub="alice", roles=["analyst"])
+        token = create_access_token(username="alice", roles=["analyst"])
         resp = app_client.get("/admin-only", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 403
 
