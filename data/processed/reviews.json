@@ -1,23 +1,32 @@
 [
   {
+    "assigned_reviewer": "",
     "comments": "Confirmed by design review evidence.",
+    "created_at": "2026-05-26T14:17:45.144577+00:00",
     "decision": "accepted",
     "reviewer": "analyst-a",
     "source_id": "REQ-1",
-    "target_id": "DES-1"
+    "target_id": "DES-1",
+    "updated_at": "2026-05-26T14:17:45.144587+00:00"
   },
   {
+    "assigned_reviewer": "",
     "comments": "No direct implementation evidence.",
+    "created_at": "2026-05-26T14:17:45.144592+00:00",
     "decision": "rejected",
     "reviewer": "analyst-b",
     "source_id": "REQ-2",
-    "target_id": "CODE-2"
+    "target_id": "CODE-2",
+    "updated_at": "2026-05-26T14:17:45.144594+00:00"
   },
   {
+    "assigned_reviewer": "",
     "comments": "Audit this action.",
+    "created_at": "2026-05-26T14:17:45.144597+00:00",
     "decision": "accepted",
     "reviewer": "analyst-e",
     "source_id": "REQ-40",
-    "target_id": "DES-40"
+    "target_id": "DES-40",
+    "updated_at": "2026-05-26T14:17:45.204770+00:00"
   }
 ]

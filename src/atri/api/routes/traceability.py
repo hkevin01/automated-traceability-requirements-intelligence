@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 
+
+
 from atri.api.schemas import (
     AuditEventResponse,
     GraphSyncRequest,
@@ -140,3 +142,125 @@ def list_audit_events() -> list[dict]:
 @router.get("/audit/summary")
 def audit_summary() -> dict:
     return audit_service.summarize_events()
+
+
+@router.get("/audit/actor-summary")
+def audit_actor_summary() -> list[dict]:
+    """
+    ID: ATRI-TRACE-007
+    Purpose: Return per-actor breakdown of audit events for reviewer drill-down.
+    """
+    return audit_service.actor_summary()
+
+
+@router.get("/audit/subject/{subject_id}")
+def audit_subject_history(subject_id: str) -> list[dict]:
+    """
+    ID: ATRI-TRACE-008
+    Purpose: Return all audit events for a specific artifact or link subject_id.
+    """
+    return [
+        {
+            "event_type": e.event_type,
+            "subject_id": e.subject_id,
+            "actor": e.actor,
+            "timestamp": e.timestamp,
+            "details": e.details,
+        }
+        for e in audit_service.subject_history(subject_id)
+    ]
+
+
+class ReviewAssignRequest(BaseModel):
+    source_id: str
+    target_id: str
+    assigned_reviewer: str
+    actor: str = "system"
+
+
+@router.post("/review/assign", response_model=dict)
+def assign_reviewer(payload: ReviewAssignRequest) -> dict:
+    """
+    ID: ATRI-TRACE-009
+    Purpose: Assign a named reviewer to a trace link; creates a pending record if absent.
+    """
+    record = review_service.assign_reviewer(
+        source_id=payload.source_id,
+        target_id=payload.target_id,
+        assigned_reviewer=payload.assigned_reviewer,
+        actor=payload.actor,
+    )
+    audit_service.record_event(
+        event_type="reviewer_assigned",
+        subject_id=f"{record.source_id}->{record.target_id}",
+        actor=payload.actor,
+        details={"assigned_reviewer": payload.assigned_reviewer},
+    )
+    return record.to_dict()
+
+
+@router.get("/reviews/history")
+def review_history(
+    source_id: str | None = None,
+    target_id: str | None = None,
+    reviewer: str | None = None,
+) -> list[dict]:
+    """
+    ID: ATRI-TRACE-010
+    Purpose: Return the reviewer history trail with optional filters.
+    """
+    entries = review_service.list_history(
+        source_id=source_id,
+        target_id=target_id,
+        reviewer=reviewer,
+    )
+    return [e.to_dict() for e in entries]
+
+
+@router.get("/reviews/reviewer-summary")
+def reviewer_summary() -> list[dict]:
+    """
+    ID: ATRI-TRACE-011
+    Purpose: Return per-reviewer review counts for dashboard drill-down.
+    """
+    return review_service.reviewer_summary()
+
+
+class VectorIndexRequest(BaseModel):
+    artifacts: list[ArtifactIn]
+
+
+class VectorQueryRequest(BaseModel):
+    source: ArtifactIn
+    top_k: int = 10
+    min_score: float = 0.1
+
+
+@router.post("/vector/build")
+def vector_build(payload: VectorIndexRequest) -> dict:
+    """
+    ID: ATRI-TRACE-012
+    Purpose: Build the TF-IDF semantic index from the provided artifact list.
+    """
+    from atri.core.services.vector_store import VectorSearchService  # noqa: PLC0415
+    from atri.config import settings as _settings  # noqa: PLC0415
+    svc = VectorSearchService(_settings.vector_index_path)
+    svc.build_index([a.model_dump() for a in payload.artifacts])
+    return {"indexed": svc.corpus_size()}
+
+
+@router.post("/vector/query")
+def vector_query(payload: VectorQueryRequest) -> dict:
+    """
+    ID: ATRI-TRACE-013
+    Purpose: Query the TF-IDF semantic index for candidates similar to source artifact.
+    """
+    from atri.core.services.vector_store import VectorSearchService  # noqa: PLC0415
+    from atri.config import settings as _settings  # noqa: PLC0415
+    svc = VectorSearchService(_settings.vector_index_path)
+    results = svc.query(
+        artifact=payload.source.model_dump(),
+        top_k=payload.top_k,
+        min_score=payload.min_score,
+    )
+    return {"results": results}
