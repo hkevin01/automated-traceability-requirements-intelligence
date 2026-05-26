@@ -13,16 +13,16 @@ Constraints: File size limited by uvicorn's body-size limit (default 1 MB); conf
 
 from __future__ import annotations
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from atri.config import settings
 from atri.ingestion.base import BaseIngestionAdapter, IngestionResult
 from atri.ingestion.doors import DOORSAdapter
 from atri.ingestion.jama import JamaAdapter
 from atri.ingestion.sysml import SysMLAdapter
 from atri.ingestion.visure import VisureAdapter
 from atri.ingestion.word_pdf import WordPDFAdapter
+from atri.core.tenancy import TenantContext, resolve_tenant
 
 router = APIRouter(prefix="/api/v1/ingestion", tags=["ingestion"])
 
@@ -64,6 +64,7 @@ class IngestionResponse(BaseModel):
 async def upload_artifact(
     source_type: str,
     file: UploadFile = File(...),
+    tenant: TenantContext = Depends(resolve_tenant),
 ) -> dict:
     """
     ID: ATRI-ING-ROUTE-004
@@ -93,7 +94,7 @@ async def upload_artifact(
             detail=f"Failed to parse uploaded file: {exc}",
         ) from exc
 
-    BaseIngestionAdapter.persist(results, settings.ingestion_store_path)
+    BaseIngestionAdapter.persist(results, str(tenant.ingestion_store_path))
 
     return {
         "source_type": source_type,

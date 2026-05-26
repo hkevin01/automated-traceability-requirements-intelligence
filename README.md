@@ -209,26 +209,34 @@ sequenceDiagram
 | <sub>15</sub> | <sub>GET</sub> | <sub>/api/v1/traceability/audit/subject/{subject_id}</sub> | <sub>Full audit history for a specific artifact or link</sub> |
 | <sub>16</sub> | <sub>POST</sub> | <sub>/api/v1/traceability/vector/build</sub> | <sub>Build the TF-IDF semantic index from an artifact list</sub> |
 | <sub>17</sub> | <sub>POST</sub> | <sub>/api/v1/traceability/vector/query</sub> | <sub>Query the TF-IDF index for semantically similar artifacts</sub> |
+| <sub>18</sub> | <sub>POST</sub> | <sub>/api/v1/traceability/link-explain</sub> | <sub>LLM-enriched rationale for a source-target trace link; heuristic fallback when disabled</sub> |
+
+### Streaming
+
+| # | Method | Path | Description |
+|---|--------|------|-------------|
+| <sub>19</sub> | <sub>WS</sub> | <sub>/api/v1/stream/events</sub> | <sub>WebSocket - push audit events and dashboard snapshots in real time (`?topic=audit\|dashboard\|all`)</sub> |
+| <sub>20</sub> | <sub>GET</sub> | <sub>/api/v1/stream/status</sub> | <sub>Number of currently connected WebSocket clients</sub> |
 
 ### Impact and Gaps
 
 | # | Method | Path | Description |
-|---|--------|------|-------------|
-| <sub>18</sub> | <sub>POST</sub> | <sub>/api/v1/impact/analyze</sub> | <sub>Compute upstream and downstream impact from changed artifacts</sub> |
-| <sub>19</sub> | <sub>POST</sub> | <sub>/api/v1/gaps/detect</sub> | <sub>Detect orphan requirements, missing tests, and weak mitigations</sub> |
+|---|--------|------|--------------|
+| <sub>21</sub> | <sub>POST</sub> | <sub>/api/v1/impact/analyze</sub> | <sub>Compute upstream and downstream impact from changed artifacts</sub> |
+| <sub>22</sub> | <sub>POST</sub> | <sub>/api/v1/gaps/detect</sub> | <sub>Detect orphan requirements, missing tests, and weak mitigations</sub> |
 
 ### Ingestion
 
 | # | Method | Path | Description |
 |---|--------|------|-------------|
-| <sub>20</sub> | <sub>POST</sub> | <sub>/api/v1/ingestion/upload/{source_type}</sub> | <sub>Upload a file (CSV, XML, XLSX, DOCX, PDF, JSON) for ingestion</sub> |
-| <sub>21</sub> | <sub>GET</sub> | <sub>/api/v1/ingestion/sources</sub> | <sub>List supported source adapter names</sub> |
+| <sub>23</sub> | <sub>POST</sub> | <sub>/api/v1/ingestion/upload/{source_type}</sub> | <sub>Upload a file (CSV, XML, XLSX, DOCX, PDF, JSON) for ingestion</sub> |
+| <sub>24</sub> | <sub>GET</sub> | <sub>/api/v1/ingestion/sources</sub> | <sub>List supported source adapter names</sub> |
 
 ### Capabilities
 
 | # | Method | Path | Description |
 |---|--------|------|-------------|
-| <sub>22</sub> | <sub>GET</sub> | <sub>/api/v1/capabilities</sub> | <sub>Enumerate platform capabilities and their status</sub> |
+| <sub>25</sub> | <sub>GET</sub> | <sub>/api/v1/capabilities</sub> | <sub>Enumerate platform capabilities and their status</sub> |
 
 </details>
 
@@ -262,6 +270,39 @@ python -c "from atri.api.auth import create_access_token; print(create_access_to
 # Use it in requests
 curl -H "Authorization: Bearer <token>" http://localhost:8000/api/v1/dashboard/summary
 ```
+
+### SSO / OIDC Integration
+
+When `ATRI_OIDC_ENABLED=true`, ATRI accepts Bearer tokens issued by any standards-compliant OIDC Identity Provider (IdP) - including Okta, Microsoft Azure AD, Keycloak, and Auth0 - without requiring a separate ATRI-specific shared secret.
+
+```bash
+# Example: configure for Okta
+ATRI_OIDC_ENABLED=true
+ATRI_OIDC_ISSUER=https://your-org.okta.com/oauth2/default
+ATRI_OIDC_CLIENT_ID=0oa...
+ATRI_OIDC_AUDIENCE=api://default
+```
+
+ATRI discovers the JWKS endpoint automatically from `{issuer}/.well-known/jwks.json` and caches keys for 5 minutes. Roles are extracted from the `roles`, `groups`, `cognito:groups`, or `realm_access.roles` claim - whichever is present - and mapped directly to the ATRI RBAC role matrix. When none of those claims are present, the token is accepted with the `viewer` role.
+
+> [!TIP]
+> OIDC and local JWT auth can coexist. If `ATRI_OIDC_ENABLED=true`, ATRI tries the shared-secret check first, then OIDC, then local JWT - so existing integrations continue to work without changes.
+
+### Multi-Tenant Isolation
+
+When `ATRI_MULTI_TENANT_ENABLED=true`, every data store is scoped to the tenant resolved from the `X-Tenant-ID` request header. Each tenant's reviews, audit events, trace graph, vector index, and ingested artifacts are stored in a separate directory under `ATRI_TENANT_DATA_ROOT/{tenant_id}/` with no cross-contamination possible.
+
+```bash
+# Requests for tenant "acme-corp" read/write data/tenants/acme-corp/
+curl -H "X-Tenant-ID: acme-corp" -H "Authorization: Bearer <token>" \
+  http://localhost:8000/api/v1/traceability/reviews
+
+# Requests for tenant "nasa-ivv" are fully isolated
+curl -H "X-Tenant-ID: nasa-ivv" -H "Authorization: Bearer <token>" \
+  http://localhost:8000/api/v1/traceability/reviews
+```
+
+Tenant IDs are validated against `[a-zA-Z0-9_-]{1,64}` before being used in any path operation, preventing directory traversal attacks. When the header is absent the request falls back to `ATRI_DEFAULT_TENANT_ID` (default: `default`). In single-tenant mode (the default) the header is ignored and all requests use the global `settings.*_path` values.
 
 ---
 
@@ -306,7 +347,17 @@ All configuration is loaded from environment variables with the `ATRI_` prefix. 
 | <sub>8</sub> | <sub>ATRI_AUDIT_STORE_PATH</sub> | <sub>data/processed/audit_events.jsonl</sub> | <sub>no</sub> | <sub>Immutable audit event log</sub> |
 | <sub>9</sub> | <sub>ATRI_INGESTION_STORE_PATH</sub> | <sub>data/processed/ingested_artifacts.jsonl</sub> | <sub>no</sub> | <sub>Persisted ingested artifact records</sub> |
 | <sub>10</sub> | <sub>ATRI_NEO4J_URI</sub> | <sub>(empty)</sub> | <sub>no</sub> | <sub>Neo4j bolt URI - activates the Neo4j adapter when set</sub> |
-| <sub>11</sub> | <sub>ATRI_OPENAI_API_KEY</sub> | <sub>(empty)</sub> | <sub>no</sub> | <sub>OpenAI API key for future LLM link enrichment</sub> |
+| <sub>11</sub> | <sub>ATRI_OPENAI_API_KEY</sub> | <sub>(empty)</sub> | <sub>no</sub> | <sub>OpenAI API key for LLM-enriched link rationale (`link-explain` endpoint)</sub> |
+| <sub>12</sub> | <sub>ATRI_LLM_RATIONALE_ENABLED</sub> | <sub>false</sub> | <sub>no</sub> | <sub>Set true to call OpenAI/Azure for rationale; false uses heuristic fallback</sub> |
+| <sub>13</sub> | <sub>ATRI_OPENAI_MODEL</sub> | <sub>gpt-4o-mini</sub> | <sub>no</sub> | <sub>OpenAI model name for rationale generation</sub> |
+| <sub>14</sub> | <sub>ATRI_AZURE_OPENAI_ENDPOINT</sub> | <sub>(empty)</sub> | <sub>no</sub> | <sub>Azure OpenAI endpoint URL; takes priority over ATRI_OPENAI_API_KEY when set</sub> |
+| <sub>15</sub> | <sub>ATRI_OIDC_ENABLED</sub> | <sub>false</sub> | <sub>no</sub> | <sub>Set true to accept tokens from an external OIDC IdP (Okta, Azure AD, Keycloak)</sub> |
+| <sub>16</sub> | <sub>ATRI_OIDC_ISSUER</sub> | <sub>(empty)</sub> | <sub>no</sub> | <sub>OIDC issuer URL; JWKS discovered at `{issuer}/.well-known/jwks.json` if ATRI_OIDC_JWKS_URI not set</sub> |
+| <sub>17</sub> | <sub>ATRI_OIDC_JWKS_URI</sub> | <sub>(empty)</sub> | <sub>no</sub> | <sub>Explicit JWKS endpoint URL; cached for 5 minutes</sub> |
+| <sub>18</sub> | <sub>ATRI_OIDC_AUDIENCE</sub> | <sub>(empty)</sub> | <sub>no</sub> | <sub>Expected JWT audience claim value</sub> |
+| <sub>19</sub> | <sub>ATRI_MULTI_TENANT_ENABLED</sub> | <sub>false</sub> | <sub>no</sub> | <sub>Set true to scope all stores to `X-Tenant-ID` header; default tenant used when header absent</sub> |
+| <sub>20</sub> | <sub>ATRI_DEFAULT_TENANT_ID</sub> | <sub>default</sub> | <sub>no</sub> | <sub>Fallback tenant ID when X-Tenant-ID header is absent</sub> |
+| <sub>21</sub> | <sub>ATRI_TENANT_DATA_ROOT</sub> | <sub>data/tenants</sub> | <sub>no</sub> | <sub>Root directory for per-tenant data stores</sub> |
 
 ---
 
@@ -406,13 +457,17 @@ automated-traceability-requirements-intelligence/
 │   │       └── Ingestion.jsx    # File upload form
 │   ├── package.json
 │   └── vite.config.js
-├── tests/                       # pytest test suite (81 tests)
+├── tests/                       # pytest test suite (114 tests)
 │   ├── test_health.py
 │   ├── test_api_routes.py
 │   ├── test_ingestion_adapters.py
 │   ├── test_vector_store.py
 │   ├── test_auth.py
-│   └── test_review_audit_service.py
+│   ├── test_review_audit_service.py
+│   ├── test_llm_rationale.py
+│   ├── test_stream.py
+│   ├── test_oidc.py
+│   └── test_tenant.py
 ├── docker/
 │   ├── docker-compose.yml       # API + Postgres + Redis + Neo4j
 │   └── Dockerfile.api
@@ -526,11 +581,11 @@ make test
 - [x] Neo4j production adapter (requires `pip install neo4j`)
 - [x] React dashboard frontend scaffold
 - [x] Docker Compose with Neo4j service
-- [x] 81 passing tests
-- [ ] LLM-enriched link rationale generation (roadmap)
-- [ ] Streaming dashboard WebSocket endpoint (roadmap)
-- [ ] SSO / OIDC integration (roadmap)
-- [ ] Multi-tenant graph isolation (roadmap)
+- [x] 114 passing tests
+- [x] LLM-enriched link rationale generation (`POST /api/v1/traceability/link-explain`)
+- [x] Streaming dashboard WebSocket endpoint (`WS /api/v1/stream/events`)
+- [x] SSO / OIDC integration (Okta, Azure AD, Keycloak, Auth0)
+- [x] Multi-tenant graph isolation (`X-Tenant-ID` header, path-traversal safe)
 
 ---
 
@@ -549,12 +604,16 @@ gantt
     JWT auth + RBAC              :done,    auth,      2026-05-24, 2026-05-25
     TF-IDF vector search         :done,    vector,    2026-05-25, 2026-05-26
     React frontend scaffold      :done,    react,     2026-05-26, 2026-05-27
-    81 tests passing             :done,    tests,     2026-05-27, 2026-05-28
-    section Next Steps
-    LLM link rationale           :         llm,       2026-06-01, 2026-06-15
-    Streaming WebSocket feed     :         ws,        2026-06-15, 2026-06-25
-    SSO / OIDC integration       :         sso,       2026-06-25, 2026-07-10
-    Multi-tenant isolation       :         mt,        2026-07-10, 2026-07-25
+    114 tests passing            :done,    tests,     2026-05-27, 2026-05-28
+    section Intelligence & Integration
+    LLM link rationale           :done,    llm,       2026-05-28, 2026-06-05
+    Streaming WebSocket feed     :done,    ws,        2026-06-05, 2026-06-10
+    SSO / OIDC integration       :done,    sso,       2026-06-10, 2026-06-15
+    Multi-tenant isolation       :done,    mt,        2026-06-15, 2026-05-26
+    section Production Hardening
+    Neo4j graph DB backend       :         neo4j,     2026-06-01, 2026-06-20
+    CI/CD pipeline automation    :         cicd,      2026-06-20, 2026-07-05
+    Frontend polish & UX         :         ux,        2026-07-05, 2026-07-25
 ```
 
 ---

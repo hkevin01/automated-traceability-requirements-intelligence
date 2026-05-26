@@ -1,14 +1,26 @@
 from fastapi.testclient import TestClient
 
-from atri.api.routes import dashboard as dashboard_route
 from atri.api.routes import impact as impact_route
-from atri.api.routes import traceability as traceability_route
 from atri.core.services.audit import TraceAuditService
 from atri.core.services.graph_store import TraceGraphStore
 from atri.core.services.review import TraceReviewService
+from atri.core.tenancy import TenantContext, resolve_tenant
 from atri.main import app
 
 client = TestClient(app)
+
+
+def _tenant_ctx(tmp_path) -> TenantContext:
+    """Return a TenantContext with all stores scoped to tmp_path."""
+    return TenantContext(
+        tenant_id="test",
+        review_store_path=tmp_path / "reviews.json",
+        review_history_store_path=tmp_path / "review_history.jsonl",
+        graph_store_path=tmp_path / "trace_graph.json",
+        audit_store_path=tmp_path / "audit_events.jsonl",
+        ingestion_store_path=tmp_path / "ingested.jsonl",
+        vector_index_path=tmp_path / "vector_index.json",
+    )
 
 
 def test_dashboard_summary_contract() -> None:
@@ -26,7 +38,7 @@ def test_dashboard_summary_contract() -> None:
 
 def test_dashboard_view_renders_visual_summary(tmp_path, monkeypatch) -> None:
     review_store = tmp_path / "reviews.json"
-    audit_store = tmp_path / "audit_events.json"
+    audit_store = tmp_path / "audit_events.jsonl"
     graph_store = tmp_path / "trace_graph.json"
 
     review_service = TraceReviewService(review_store)
@@ -102,9 +114,7 @@ def test_dashboard_view_renders_visual_summary(tmp_path, monkeypatch) -> None:
         ],
     )
 
-    monkeypatch.setattr(dashboard_route, "review_service", review_service)
-    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
-    monkeypatch.setattr(dashboard_route, "graph_store", graph)
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
 
     response = client.get("/api/v1/dashboard/view")
 
@@ -192,18 +202,7 @@ def test_traceability_suggestions_contract() -> None:
 
 
 def test_traceability_review_workflow_contract(tmp_path, monkeypatch) -> None:
-    review_store = tmp_path / "reviews.json"
-    audit_store = tmp_path / "audit_events.json"
-    monkeypatch.setattr(
-        traceability_route,
-        "review_service",
-        TraceReviewService(review_store),
-    )
-    monkeypatch.setattr(
-        traceability_route,
-        "audit_service",
-        TraceAuditService(audit_store),
-    )
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
 
     accepted_response = client.post(
         "/api/v1/traceability/review",
@@ -281,12 +280,7 @@ def test_traceability_review_workflow_contract(tmp_path, monkeypatch) -> None:
 
 
 def test_audit_events_record_review_actions(tmp_path, monkeypatch) -> None:
-    audit_store = tmp_path / "audit_events.json"
-    monkeypatch.setattr(
-        traceability_route,
-        "audit_service",
-        TraceAuditService(audit_store),
-    )
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
 
     response = client.post(
         "/api/v1/traceability/review",
@@ -342,15 +336,7 @@ def test_trace_review_service_persists_reviews(tmp_path) -> None:
 
 
 def test_trace_graph_store_persists_and_drives_impact(tmp_path, monkeypatch) -> None:
-    store_path = tmp_path / "trace_graph.json"
-    graph_store = TraceGraphStore(store_path)
-    monkeypatch.setattr(traceability_route, "graph_store", graph_store)
-    monkeypatch.setattr(impact_route.service, "graph_store", graph_store)
-    monkeypatch.setattr(
-        traceability_route,
-        "audit_service",
-        TraceAuditService(tmp_path / "audit_events.json"),
-    )
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
 
     sync_response = client.post(
         "/api/v1/traceability/graph",
@@ -530,18 +516,21 @@ def test_gap_detection_contract() -> None:
 # ---------------------------------------------------------------------------
 
 def test_drilldown_reviews_empty(tmp_path, monkeypatch) -> None:
-    review_service = TraceReviewService(tmp_path / "r.json", tmp_path / "rh.jsonl")
-    monkeypatch.setattr(dashboard_route, "review_service", review_service)
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
     resp = client.get("/api/v1/dashboard/drilldown/reviews")
     assert resp.status_code == 200
     assert resp.json() == []
 
 
 def test_drilldown_reviews_with_data(tmp_path, monkeypatch) -> None:
-    review_service = TraceReviewService(tmp_path / "r.json", tmp_path / "rh.jsonl")
+    # Write data using the same paths that _tenant_ctx will resolve
+    review_service = TraceReviewService(
+        tmp_path / "reviews.json",
+        tmp_path / "review_history.jsonl",
+    )
     review_service.record_review("A", "B", decision="accepted", reviewer="alice")
     review_service.record_review("C", "D", decision="accepted", reviewer="alice")
-    monkeypatch.setattr(dashboard_route, "review_service", review_service)
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
     resp = client.get("/api/v1/dashboard/drilldown/reviews")
     assert resp.status_code == 200
     data = resp.json()
@@ -549,18 +538,17 @@ def test_drilldown_reviews_with_data(tmp_path, monkeypatch) -> None:
 
 
 def test_drilldown_audit_empty(tmp_path, monkeypatch) -> None:
-    audit_service = TraceAuditService(tmp_path / "ev.jsonl")
-    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
     resp = client.get("/api/v1/dashboard/drilldown/audit")
     assert resp.status_code == 200
     assert resp.json() == []
 
 
 def test_drilldown_audit_with_data(tmp_path, monkeypatch) -> None:
-    audit_service = TraceAuditService(tmp_path / "ev.jsonl")
+    audit_service = TraceAuditService(tmp_path / "audit_events.jsonl")
     audit_service.record_event("link_created", "REQ-1->TC-1", actor="bob")
     audit_service.record_event("link_created", "REQ-2->TC-2", actor="bob")
-    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
     resp = client.get("/api/v1/dashboard/drilldown/audit")
     assert resp.status_code == 200
     data = resp.json()
@@ -568,10 +556,10 @@ def test_drilldown_audit_with_data(tmp_path, monkeypatch) -> None:
 
 
 def test_drilldown_audit_subject(tmp_path, monkeypatch) -> None:
-    audit_service = TraceAuditService(tmp_path / "ev.jsonl")
+    audit_service = TraceAuditService(tmp_path / "audit_events.jsonl")
     audit_service.record_event("ev", "REQ-X->TC-X", actor="carol")
     audit_service.record_event("ev", "REQ-Y->TC-Y", actor="carol")
-    monkeypatch.setattr(dashboard_route, "audit_service", audit_service)
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
     resp = client.get("/api/v1/dashboard/drilldown/audit/subject/REQ-X->TC-X")
     assert resp.status_code == 200
     data = resp.json()
@@ -581,8 +569,7 @@ def test_drilldown_audit_subject(tmp_path, monkeypatch) -> None:
 
 
 def test_drilldown_graph(tmp_path, monkeypatch) -> None:
-    from atri.api.routes import dashboard as dash
-    monkeypatch.setattr(dashboard_route, "graph_store", TraceGraphStore(tmp_path / "g.json"))
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
     resp = client.get("/api/v1/dashboard/drilldown/graph")
     assert resp.status_code == 200
     data = resp.json()
@@ -611,9 +598,7 @@ def test_ingestion_upload_unknown_source() -> None:
 
 
 def test_ingestion_upload_doors_csv(tmp_path, monkeypatch) -> None:
-    import atri.api.routes.ingestion as ing_route
-    from atri.config import settings as _settings
-    monkeypatch.setattr(_settings, "ingestion_store_path", str(tmp_path / "ing.jsonl"))
+    monkeypatch.setitem(app.dependency_overrides, resolve_tenant, lambda: _tenant_ctx(tmp_path))
     csv_content = b"id,title,body\nREQ-1,Login,Users must authenticate."
     from io import BytesIO
     resp = client.post(

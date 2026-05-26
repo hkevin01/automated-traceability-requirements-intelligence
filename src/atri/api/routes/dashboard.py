@@ -1,24 +1,22 @@
 from html import escape
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import HTMLResponse
 
 from atri.api.schemas import DashboardSummaryResponse
-from atri.config import settings
 from atri.core.services.audit import TraceAuditService
 from atri.core.services.graph_store import TraceGraphStore
 from atri.core.services.review import TraceReviewService
+from atri.core.tenancy import TenantContext, resolve_tenant
 
 router = APIRouter(prefix="/api/v1/dashboard", tags=["dashboard"])
-review_service = TraceReviewService(
-    settings.review_store_path,
-    history_path=settings.review_history_store_path,
-)
-audit_service = TraceAuditService(settings.audit_store_path)
-graph_store = TraceGraphStore(settings.graph_store_path)
 
 
-def _build_dashboard_snapshot() -> dict[str, object]:
+def _build_dashboard_snapshot(
+    review_svc: TraceReviewService,
+    audit_svc: TraceAuditService,
+    gs: TraceGraphStore,
+) -> dict[str, object]:
     summary = {
         "trace_coverage": 0.78,
         "suspect_links": 14,
@@ -28,9 +26,9 @@ def _build_dashboard_snapshot() -> dict[str, object]:
     }
     return {
         "summary": summary,
-        "review_summary": review_service.summarize_reviews(),
-        "audit_summary": audit_service.summarize_events(),
-        "graph_stats": graph_store.stats(),
+        "review_summary": review_svc.summarize_reviews(),
+        "audit_summary": audit_svc.summarize_events(),
+        "graph_stats": gs.stats(),
     }
 
 
@@ -246,32 +244,45 @@ def summary() -> dict:
 
 
 @router.get("/view", response_class=HTMLResponse)
-def view() -> HTMLResponse:
-    return HTMLResponse(_render_dashboard_html(_build_dashboard_snapshot()))
+def view(tenant: TenantContext = Depends(resolve_tenant)) -> HTMLResponse:
+    review_svc = TraceReviewService(
+        str(tenant.review_store_path),
+        history_path=str(tenant.review_history_store_path),
+    )
+    audit_svc = TraceAuditService(str(tenant.audit_store_path))
+    gs = TraceGraphStore(str(tenant.graph_store_path))
+    return HTMLResponse(_render_dashboard_html(_build_dashboard_snapshot(review_svc, audit_svc, gs)))
 
 
 @router.get("/drilldown/reviews")
-def drilldown_reviews() -> list[dict]:
+def drilldown_reviews(tenant: TenantContext = Depends(resolve_tenant)) -> list[dict]:
     """
     ID: ATRI-DASH-003
     Purpose: Return per-reviewer review breakdown for dashboard drill-down.
     Outputs: list of dicts with reviewer, total, accepted, rejected, pending counts.
     """
-    return review_service.reviewer_summary()
+    review_svc = TraceReviewService(
+        str(tenant.review_store_path),
+        history_path=str(tenant.review_history_store_path),
+    )
+    return review_svc.reviewer_summary()
 
 
 @router.get("/drilldown/audit")
-def drilldown_audit() -> list[dict]:
+def drilldown_audit(tenant: TenantContext = Depends(resolve_tenant)) -> list[dict]:
     """
     ID: ATRI-DASH-004
     Purpose: Return per-actor audit event breakdown for the dashboard.
     Outputs: list of dicts with actor and event-type counts.
     """
-    return audit_service.actor_summary()
+    return TraceAuditService(str(tenant.audit_store_path)).actor_summary()
 
 
 @router.get("/drilldown/audit/subject/{subject_id}")
-def drilldown_audit_subject(subject_id: str) -> list[dict]:
+def drilldown_audit_subject(
+    subject_id: str,
+    tenant: TenantContext = Depends(resolve_tenant),
+) -> list[dict]:
     """
     ID: ATRI-DASH-005
     Purpose: Return all audit events for a specific artifact or link subject.
@@ -286,18 +297,19 @@ def drilldown_audit_subject(subject_id: str) -> list[dict]:
             "timestamp": e.timestamp,
             "details": e.details,
         }
-        for e in audit_service.subject_history(subject_id)
+        for e in TraceAuditService(str(tenant.audit_store_path)).subject_history(subject_id)
     ]
 
 
 @router.get("/drilldown/graph")
-def drilldown_graph() -> dict:
+def drilldown_graph(tenant: TenantContext = Depends(resolve_tenant)) -> dict:
     """
     ID: ATRI-DASH-006
     Purpose: Return full graph stats and adjacency map for dashboard graph view.
     Outputs: dict with stats and adjacency_map fields.
     """
+    gs = TraceGraphStore(str(tenant.graph_store_path))
     return {
-        "stats": graph_store.stats(),
-        "adjacency_map": graph_store.adjacency_map(),
+        "stats": gs.stats(),
+        "adjacency_map": gs.adjacency_map(),
     }
