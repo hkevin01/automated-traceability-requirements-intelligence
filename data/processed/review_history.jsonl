@@ -76,3 +76,12 @@
 {"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-27T12:56:44.133913+00:00"}
 {"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-27T12:56:44.134082+00:00"}
 {"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-27T12:56:44.158426+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-27T13:02:03.759865+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-27T13:02:03.760040+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-27T13:02:03.788783+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-27T13:02:54.266259+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-27T13:02:54.266432+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-27T13:02:54.295432+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-27T13:04:15.421089+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-27T13:04:15.421298+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-27T13:04:15.453763+00:00"}

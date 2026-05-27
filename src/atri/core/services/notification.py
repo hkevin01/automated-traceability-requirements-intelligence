@@ -29,6 +29,11 @@ import logging
 import time
 from dataclasses import dataclass, field
 
+try:
+    import httpx as _httpx
+except ImportError:  # pragma: no cover
+    _httpx = None  # type: ignore[assignment]
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -186,8 +191,9 @@ class WebhookNotificationService:
 
         start = time.monotonic()
         try:
-            import httpx  # noqa: PLC0415
-            resp = httpx.post(webhook.url, content=body, headers=headers, timeout=10.0)
+            if _httpx is None:  # pragma: no cover
+                raise ImportError("httpx is required for webhook delivery")
+            resp = _httpx.post(webhook.url, content=body, headers=headers, timeout=10.0)
             duration = (time.monotonic() - start) * 1000
             success = resp.is_success
             if not success:

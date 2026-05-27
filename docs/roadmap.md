@@ -187,11 +187,11 @@ Acceptance criteria:
 | <sub>10</sub> | <sub>Neo4j / Graph DB Production Backend</sub> | <sub>✅ Complete</sub> |
 | <sub>11</sub> | <sub>CI/CD Pipeline & Deployment Automation</sub> | <sub>✅ Complete</sub> |
 | <sub>12</sub> | <sub>Frontend Polish & UX Hardening</sub> | <sub>✅ Complete</sub> |
-| <sub>13</sub> | <sub>Compliance Reporting</sub> | <sub>⭕ Planned</sub> |
-| <sub>14</sub> | <sub>Webhook Notifications</sub> | <sub>⭕ Planned</sub> |
-| <sub>15</sub> | <sub>Observability (Metrics + Structured Logging)</sub> | <sub>⭕ Planned</sub> |
+| <sub>13</sub> | <sub>Compliance Reporting</sub> | <sub>✅ Complete</sub> |
+| <sub>14</sub> | <sub>Webhook Notifications</sub> | <sub>✅ Complete</sub> |
+| <sub>15</sub> | <sub>Observability (Metrics + Structured Logging)</sub> | <sub>✅ Complete</sub> |
 
-> **Note:** All 12 epics are fully implemented with 120 passing tests. Epics 13-15 are the next investment phase.
+> **Note:** All 15 epics are fully implemented with 149 passing tests.
 
 ---
 
@@ -259,3 +259,69 @@ Acceptance criteria:
 - `frontend/src/components/Dashboard.jsx` - WebSocket live KPI updates + Refresh button
 - `frontend/src/components/ImpactAnalysis.jsx` - new page for impact traversal
 - `frontend/src/components/LiveFeed.jsx` - new WebSocket event stream page
+
+---
+
+### 13. Compliance Reporting - IMPLEMENTED
+
+**Goal:** Provide exportable audit + review evidence packages required for DO-178C / IEC-62304 program reviews.
+
+**Status:** Complete.
+
+**Acceptance criteria:**
+
+- `GET /api/v1/reports/compliance` returns JSON summary of audit events, review decisions, actor breakdowns, and event-type counts.
+- `GET /api/v1/reports/compliance/audit.csv` returns all audit events as a CSV attachment.
+- `GET /api/v1/reports/compliance/reviews.csv` returns all review records as a CSV attachment.
+- All endpoints are tenant-scoped via `Depends(resolve_tenant)`.
+- Missing data files are handled gracefully (empty report, not an error).
+
+**Implementation:**
+
+- `src/atri/core/services/compliance_report.py` - `ComplianceReportService` reads audit JSONL + reviews JSON; `ComplianceReport` dataclass with CSV/JSON serialisers.
+- `src/atri/api/routes/reports.py` - 3 GET endpoints registered under `/api/v1/reports`.
+- `tests/test_compliance_report.py` - 9 unit + integration tests.
+
+---
+
+### 14. Webhook Notifications - IMPLEMENTED
+
+**Goal:** Allow external systems to receive ATRI events via outbound HTTP POST without polling.
+
+**Status:** Complete.
+
+**Acceptance criteria:**
+
+- `POST /api/v1/notifications/webhooks` registers a webhook with URL, optional HMAC-SHA256 secret, and optional event filter.
+- `GET /api/v1/notifications/webhooks` lists all registered webhooks (secret redacted).
+- `DELETE /api/v1/notifications/webhooks/{name}` removes a webhook by name; 404 if not found.
+- `POST /api/v1/notifications/webhooks/test` sends a test ping to a named webhook; 404 if not found.
+- Delivery includes `X-ATRI-Signature: sha256=<hmac>` header when secret is configured.
+- HTTP delivery errors are captured and returned as structured results; no exception propagation.
+
+**Implementation:**
+
+- `src/atri/core/services/notification.py` - `WebhookConfig`, `WebhookDeliveryResult`, `WebhookNotificationService` with HMAC signing and httpx delivery.
+- `src/atri/api/routes/notifications.py` - 4 endpoints registered under `/api/v1/notifications`.
+- `tests/test_notification.py` - 12 unit + integration tests covering delivery, HMAC, errors, and 404 paths.
+
+---
+
+### 15. Observability (Metrics + Structured Logging) - IMPLEMENTED
+
+**Goal:** Enable SRE-style production operation with Prometheus scraping and structured JSON request logs.
+
+**Status:** Complete.
+
+**Acceptance criteria:**
+
+- `GET /metrics` returns Prometheus text exposition format with `atri_requests_total` counter and `atri_request_duration_seconds` summary.
+- Every HTTP request emits one JSON log line with `method`, `path`, `status_code`, `duration_ms`, and `tenant_id`.
+- `ObservabilityMiddleware` is registered in the FastAPI app; metrics are accumulated in-process.
+- Registry is thread-safe; resets cleanly for tests.
+
+**Implementation:**
+
+- `src/atri/core/services/metrics.py` - `MetricsRegistry` with thread-safe counter/histogram; `to_text_format()` for Prometheus output; module-level `registry` singleton.
+- `src/atri/api/routes/observability.py` - `GET /metrics` endpoint + `ObservabilityMiddleware`.
+- `tests/test_metrics.py` - 9 tests covering counter operations, histogram percentiles, text format, and the `/metrics` HTTP endpoint.

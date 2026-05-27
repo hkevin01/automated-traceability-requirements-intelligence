@@ -461,7 +461,7 @@ automated-traceability-requirements-intelligence/
 │   │       └── LiveFeed.jsx     # Real-time WebSocket event feed
 │   ├── package.json
 │   └── vite.config.js
-├── tests/                       # pytest test suite (120 tests)
+├── tests/                       # pytest test suite (149 tests)
 │   ├── test_health.py
 │   ├── test_api_routes.py
 │   ├── test_ingestion_adapters.py
@@ -594,7 +594,7 @@ make test
 - [x] Neo4j production graph backend (factory auto-selects via `ATRI_GRAPH_BACKEND_URI`)
 - [x] CI/CD pipeline - matrix lint+test (Python 3.11/3.12), Docker smoke, GHCR release workflow
 - [x] Frontend polish - Impact Analysis page, Live Feed WebSocket page, live KPI updates
-- [x] 120 passing tests
+- [x] 149 passing tests
 
 ---
 
@@ -623,7 +623,7 @@ gantt
     Neo4j graph DB backend       :done,    neo4j,     2026-05-26, 2026-05-27
     CI/CD pipeline automation    :done,    cicd,      2026-05-27, 2026-05-28
     Frontend polish & UX         :done,    ux,        2026-05-28, 2026-05-30
-    120 tests passing            :done,    tests2,    2026-05-30, 2026-05-31
+    149 tests passing            :done,    tests2,    2026-05-30, 2026-05-31
 ```
 
 ---
@@ -634,7 +634,7 @@ Contributions are welcome. Please follow these conventions to keep the codebase 
 
 **Code style** - All Python files follow the comment header convention in `CONTRIBUTING.md`. Every module, class, and public method must have a NASA-style structured header with: ID, Purpose, Requirement, Inputs, Outputs, Preconditions, Postconditions, and Failure Modes fields.
 
-**Testing** - All new features must ship with tests. Tests live in `tests/` and use `pytest`. Service tests must use `tmp_path` to avoid polluting `data/processed/`. All 120 existing tests must continue to pass.
+**Testing** - All new features must ship with tests. Tests live in `tests/` and use `pytest`. Service tests must use `tmp_path` to avoid polluting `data/processed/`. All 149 existing tests must continue to pass.
 
 **Adapters** - New ingestion adapters should subclass `BaseIngestionAdapter`, implement `ingest()`, and be registered in `src/atri/api/routes/ingestion.py`. Include at least 5 unit tests covering happy path, edge cases, and the file-not-found error.
 
