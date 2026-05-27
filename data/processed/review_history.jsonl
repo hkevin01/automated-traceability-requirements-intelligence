@@ -73,3 +73,6 @@
 {"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-26T15:49:25.898249+00:00"}
 {"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-26T15:49:25.898453+00:00"}
 {"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-26T15:49:25.931881+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "accepted", "reviewer": "analyst-g", "source_id": "REQ-70", "target_id": "DES-70", "timestamp": "2026-05-27T12:56:44.133913+00:00"}
+{"comments": "Visual dashboard seed.", "decision": "rejected", "reviewer": "analyst-h", "source_id": "REQ-71", "target_id": "CODE-71", "timestamp": "2026-05-27T12:56:44.134082+00:00"}
+{"comments": "Persist this decision.", "decision": "accepted", "reviewer": "analyst-c", "source_id": "REQ-9", "target_id": "DES-9", "timestamp": "2026-05-27T12:56:44.158426+00:00"}

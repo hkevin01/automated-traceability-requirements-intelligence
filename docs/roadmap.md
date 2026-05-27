@@ -184,11 +184,14 @@ Acceptance criteria:
 | <sub>7</sub> | <sub>Real-Time Streaming Dashboard</sub> | <sub>✅ Complete</sub> |
 | <sub>8</sub> | <sub>SSO / OIDC Integration</sub> | <sub>✅ Complete</sub> |
 | <sub>9</sub> | <sub>Multi-Tenant Graph Isolation</sub> | <sub>✅ Complete</sub> |
-| <sub>10</sub> | <sub>Neo4j / Graph DB Production Backend</sub> | <sub>⭕ Planned</sub> |
-| <sub>11</sub> | <sub>CI/CD Pipeline & Deployment Automation</sub> | <sub>⭕ Planned</sub> |
-| <sub>12</sub> | <sub>Frontend Polish & UX Hardening</sub> | <sub>⭕ Planned</sub> |
+| <sub>10</sub> | <sub>Neo4j / Graph DB Production Backend</sub> | <sub>✅ Complete</sub> |
+| <sub>11</sub> | <sub>CI/CD Pipeline & Deployment Automation</sub> | <sub>✅ Complete</sub> |
+| <sub>12</sub> | <sub>Frontend Polish & UX Hardening</sub> | <sub>✅ Complete</sub> |
+| <sub>13</sub> | <sub>Compliance Reporting</sub> | <sub>⭕ Planned</sub> |
+| <sub>14</sub> | <sub>Webhook Notifications</sub> | <sub>⭕ Planned</sub> |
+| <sub>15</sub> | <sub>Observability (Metrics + Structured Logging)</sub> | <sub>⭕ Planned</sub> |
 
-> **Note:** Epics 1-9 are fully implemented with passing unit and integration tests. Epics 10-12 represent the next investment phase for production hardening.
+> **Note:** All 12 epics are fully implemented with 120 passing tests. Epics 13-15 are the next investment phase.
 
 ---
 

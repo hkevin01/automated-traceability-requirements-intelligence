@@ -9,6 +9,10 @@ from atri.api.routes.gaps import router as gaps_router
 from atri.api.routes.health import router as health_router
 from atri.api.routes.impact import router as impact_router
 from atri.api.routes.ingestion import router as ingestion_router
+from atri.api.routes.notifications import router as notifications_router
+from atri.api.routes.observability import ObservabilityMiddleware
+from atri.api.routes.observability import router as observability_router
+from atri.api.routes.reports import router as reports_router
 from atri.api.routes.stream import router as stream_router
 from atri.api.routes.traceability import router as traceability_router
 from atri.config import settings
@@ -36,6 +40,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(ObservabilityMiddleware)
 
 app.include_router(health_router)
 app.include_router(capabilities_router)
@@ -45,3 +50,6 @@ app.include_router(impact_router)
 app.include_router(gaps_router)
 app.include_router(ingestion_router)
 app.include_router(stream_router)
+app.include_router(reports_router)
+app.include_router(notifications_router)
+app.include_router(observability_router)
